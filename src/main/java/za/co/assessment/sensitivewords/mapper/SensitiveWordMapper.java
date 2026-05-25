@@ -18,14 +18,9 @@ public class SensitiveWordMapper {
                 category == null ? null : category.getName(),
                 word.getWord(),
                 word.getNormalizedWord(),
-                word.getReplacementValue(),
-                word.getMatchType(),
                 word.getSeverityLevel(),
-                word.getCaseSensitive(),
                 word.getActive(),
                 word.getEffectiveFrom(),
-                word.getEffectiveTo(),
-                word.getNotes(),
                 word.getCreatedAt(),
                 word.getUpdatedAt()
         );

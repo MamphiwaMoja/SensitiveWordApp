@@ -7,7 +7,7 @@ public final class Constants {
     public static final String SPRING_PROFILE_PROD = "prod";
     public static final String APPLICATION_NAME = "sensitive-words-service";
     public static final String DB_SCHEMA = "sw";
-    public static final String SYSTEM_ACCOUNT = "api";
+    public static final String SYSTEM_ACCOUNT = "system";
     public static final String DEFAULT_REPLACEMENT = "***";
 
     private Constants() {

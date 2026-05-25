@@ -13,9 +13,9 @@ Spring Boot microservice for managing sensitive-word rules and sanitizing incomi
 
 ## What the service does
 
-1. Manages sensitive-word rules through a REST API
-2. Applies active rules to incoming text and returns a sanitized response
-3. Supports `CONTAINS`, `EXACT`, and `REGEX` rule types
+1. Manages sensitive words through a REST API
+2. Replaces active database words in incoming text with `***`
+3. Tracks each matched word and replacement count in the sanitize response
 4. Tracks CRUD audit events and optional sanitization request logs internally
 
 ## API overview
@@ -28,6 +28,8 @@ Spring Boot microservice for managing sensitive-word rules and sanitizing incomi
 | `PATCH` | `/api/v1/sensitive-words/{id}` | Partially update a sensitive-word rule |
 | `DELETE` | `/api/v1/sensitive-words/{id}` | Deactivate a sensitive-word rule |
 | `POST` | `/api/v1/sanitize` | Sanitize input text |
+| `GET` | `/openapi/sensitive-words-service.yaml` | Checked-in OpenAPI contract |
+| `GET` | `/v3/api-docs.yaml` | Generated OpenAPI document |
 | `GET` | `/swagger-ui/index.html` | Swagger UI |
 | `GET` | `/actuator/health` | Actuator health |
 
@@ -51,6 +53,7 @@ What this does:
 Useful URLs after startup:
 
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- OpenAPI contract: `http://localhost:8080/openapi/sensitive-words-service.yaml`
 - Actuator health: `http://localhost:8080/actuator/health`
 
 To stop everything and remove containers:
@@ -119,18 +122,40 @@ $env:DB_USERNAME="sensitive_words_app"
 $env:DB_PASSWORD="ChangeMe!12345"
 ```
 
-### 5. Build and run
+### 5. Configure API security
+
+The `local` profile permits API requests without authentication for local development.
+
+Any non-`local` profile requires HTTP Basic authentication for API routes. Health endpoints remain public. Configure the credentials through environment variables:
+
+```text
+SECURITY_BASIC_USERNAME=sensitive-words
+SECURITY_BASIC_PASSWORD=<set-a-secret>
+SECURITY_BASIC_ROLE=API_USER
+```
+
+Example authenticated request for non-local profiles:
+
+```bash
+curl -u sensitive-words:<set-a-secret> http://localhost:8080/api/v1/sensitive-words
+```
+
+### 6. Build and run
 
 ```bash
 mvn clean test
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-### 6. Open the application
+### 7. Open the application
 
 - Health: `http://localhost:8080/actuator/health`
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- OpenAPI contract: `http://localhost:8080/openapi/sensitive-words-service.yaml`
+- Generated OpenAPI YAML: `http://localhost:8080/v3/api-docs.yaml`
 - Actuator: `http://localhost:8080/actuator/health`
+
+Swagger UI now loads the checked-in OpenAPI contract from `src/main/resources/static/openapi/sensitive-words-service.yaml`. The generated Springdoc endpoints remain available for comparison and tooling.
 
 ## Example API calls
 
@@ -155,7 +180,7 @@ curl -X POST http://localhost:8080/api/v1/sanitize \
 ```bash
 curl -X POST http://localhost:8080/api/v1/sensitive-words \
   -H "Content-Type: application/json" \
-  -d '{"word":"local-demo-term","replacementValue":"[removed]","matchType":"CONTAINS","severityLevel":2,"caseSensitive":false,"active":true,"notes":"Created from curl smoke test"}'
+  -d '{"word":"local-demo-term","severityLevel":2,"active":true}'
 ```
 
 ### Update a sensitive word
@@ -163,7 +188,7 @@ curl -X POST http://localhost:8080/api/v1/sensitive-words \
 ```bash
 curl -X PATCH http://localhost:8080/api/v1/sensitive-words/1 \
   -H "Content-Type: application/json" \
-  -d '{"replacementValue":"***","severityLevel":3,"notes":"Updated from curl smoke test"}'
+  -d '{"severityLevel":3}'
 ```
 
 ### Deactivate a sensitive word
@@ -176,8 +201,8 @@ curl -X DELETE http://localhost:8080/api/v1/sensitive-words/1
 
 - Layered structure: controller -> service -> repository -> MSSQL
 - DTOs are used for request and response contracts
-- Soft delete is implemented as rule deactivation
-- Invalid regex rules are rejected during create/update
+- Soft delete is implemented as word deactivation
+- Sanitization uses literal, case-insensitive word replacement with the constant `***`
 - Request payload persistence is disabled by default to reduce risk around sensitive content
 - Hibernate DDL generation is disabled; schema is managed explicitly through SQL scripts
 
@@ -195,12 +220,11 @@ curl -X DELETE http://localhost:8080/api/v1/sensitive-words/1
 
 For the take-home submission, the implementation keeps rule lookup straightforward and readable. For production scale, the next optimizations would be:
 
-1. Cache active sensitive-word rules in memory and invalidate on CRUD changes
-2. Cache compiled regex `Pattern` objects to avoid recompilation on every sanitize call
-3. Keep filtered indexes on active rules and rule lookup columns
+1. Cache active sensitive words in memory and invalidate on CRUD changes
+2. Keep filtered indexes on active words and lookup columns
+3. Prefer longest-word ordering when active words overlap
 4. Avoid persisting sanitization request bodies unless explicitly needed
 5. Add metrics around request latency, match counts, cache hit ratio, and database timings
-6. Guard regex complexity more aggressively if untrusted regex patterns are allowed
 
 ## Additional enhancements for future work
 
@@ -225,7 +249,7 @@ The test suite covers:
 - sanitization behavior
 - controller validation and error handling
 - CRUD service behavior
-- regex validation on write
+- literal word replacement behavior
 
 ## Submission checklist
 

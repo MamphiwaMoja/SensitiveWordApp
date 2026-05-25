@@ -1,0 +1,492 @@
+openapi: 3.0.3
+info:
+  title: Sensitive Words Service API
+  version: v1
+  description: API for managing sensitive words and sanitizing input text.
+servers:
+  - url: http://localhost:8080
+    description: Local development
+tags:
+  - name: Sensitive Words
+    description: CRUD APIs for sensitive words
+  - name: Sanitization
+    description: APIs for sanitizing incoming text
+  - name: Health
+    description: Application health endpoints
+paths:
+  /api/v1/sensitive-words:
+    get:
+      tags:
+        - Sensitive Words
+      operationId: listSensitiveWords
+      summary: List sensitive words
+      description: Returns a paginated list of sensitive words, including active and inactive records.
+      parameters:
+        - name: page
+          in: query
+          description: Zero-based page number.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: Page size.
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+        - name: sort
+          in: query
+          description: Sort expression in Spring format, for example `id,asc`.
+          schema:
+            type: string
+            example: id,asc
+      responses:
+        '200':
+          description: Sensitive words returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensitiveWordPage'
+    post:
+      tags:
+        - Sensitive Words
+      operationId: createSensitiveWord
+      summary: Create a sensitive word
+      description: Creates a new sensitive word.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSensitiveWordRequest'
+      responses:
+        '201':
+          description: Sensitive word created
+          headers:
+            Location:
+              description: URL of the created sensitive word.
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensitiveWordResponse'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Referenced category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Duplicate active word
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/sensitive-words/{id}:
+    get:
+      tags:
+        - Sensitive Words
+      operationId: getSensitiveWordById
+      summary: Get a sensitive word by id
+      parameters:
+        - $ref: '#/components/parameters/SensitiveWordId'
+      responses:
+        '200':
+          description: Sensitive word found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensitiveWordResponse'
+        '400':
+          description: Invalid identifier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Sensitive word not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags:
+        - Sensitive Words
+      operationId: updateSensitiveWord
+      summary: Partially update a sensitive word
+      description: Applies a partial update to an existing sensitive word.
+      parameters:
+        - $ref: '#/components/parameters/SensitiveWordId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSensitiveWordRequest'
+      responses:
+        '200':
+          description: Sensitive word updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensitiveWordResponse'
+        '400':
+          description: Invalid identifier or payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Sensitive word or category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Duplicate active word
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Sensitive Words
+      operationId: deactivateSensitiveWord
+      summary: Deactivate a sensitive word
+      parameters:
+        - $ref: '#/components/parameters/SensitiveWordId'
+      responses:
+        '204':
+          description: Sensitive word deactivated
+        '400':
+          description: Invalid identifier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Sensitive word not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/sanitize:
+    post:
+      tags:
+        - Sanitization
+      operationId: sanitizeText
+      summary: Sanitize input text using active sensitive words
+      description: Replaces active sensitive words from the database with the default mask and returns the sanitized text. Request payload persistence is disabled by default and must be explicitly enabled.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SanitizeTextRequest'
+      responses:
+        '200':
+          description: Text sanitized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SanitizeTextResponse'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/health:
+    get:
+      tags:
+        - Health
+      operationId: getApplicationHealth
+      summary: Application health check
+      responses:
+        '200':
+          description: Application is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+components:
+  parameters:
+    SensitiveWordId:
+      name: id
+      in: path
+      required: true
+      description: Sensitive-word identifier.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+        example: 1
+  schemas:
+    CreateSensitiveWordRequest:
+      type: object
+      required:
+        - word
+      properties:
+        categoryId:
+          type: integer
+          format: int64
+          nullable: true
+          example: 1
+        word:
+          type: string
+          maxLength: 510
+          example: testbadword
+        severityLevel:
+          type: integer
+          minimum: 1
+          maximum: 255
+          default: 1
+          example: 2
+        active:
+          type: boolean
+          default: true
+          example: true
+    UpdateSensitiveWordRequest:
+      type: object
+      properties:
+        categoryId:
+          type: integer
+          format: int64
+          nullable: true
+          example: 2
+        word:
+          type: string
+          maxLength: 510
+          example: restricted phrase
+        severityLevel:
+          type: integer
+          minimum: 1
+          maximum: 255
+          example: 3
+        active:
+          type: boolean
+          example: true
+    SensitiveWordResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        categoryId:
+          type: integer
+          format: int64
+          nullable: true
+          example: 1
+        categoryCode:
+          type: string
+          nullable: true
+          example: PROFANITY
+        categoryName:
+          type: string
+          nullable: true
+          example: Profanity
+        word:
+          type: string
+          example: testbadword
+        normalizedWord:
+          type: string
+          example: testbadword
+        severityLevel:
+          type: integer
+          example: 2
+        active:
+          type: boolean
+          example: true
+        effectiveFrom:
+          type: string
+          format: date-time
+          example: '2026-05-23T13:00:00'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-05-23T13:00:00'
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2026-05-23T13:15:00'
+    SensitiveWordPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/SensitiveWordResponse'
+        pageable:
+          $ref: '#/components/schemas/Pageable'
+        totalPages:
+          type: integer
+          example: 1
+        totalElements:
+          type: integer
+          format: int64
+          example: 3
+        last:
+          type: boolean
+          example: true
+        size:
+          type: integer
+          example: 20
+        number:
+          type: integer
+          example: 0
+        sort:
+          $ref: '#/components/schemas/Sort'
+        numberOfElements:
+          type: integer
+          example: 3
+        first:
+          type: boolean
+          example: true
+        empty:
+          type: boolean
+          example: false
+    Pageable:
+      type: object
+      properties:
+        pageNumber:
+          type: integer
+          example: 0
+        pageSize:
+          type: integer
+          example: 20
+        sort:
+          $ref: '#/components/schemas/Sort'
+        offset:
+          type: integer
+          format: int64
+          example: 0
+        paged:
+          type: boolean
+          example: true
+        unpaged:
+          type: boolean
+          example: false
+    Sort:
+      type: object
+      properties:
+        sorted:
+          type: boolean
+          example: true
+        unsorted:
+          type: boolean
+          example: false
+        empty:
+          type: boolean
+          example: false
+    SanitizeTextRequest:
+      type: object
+      required:
+        - inputText
+      properties:
+        inputText:
+          type: string
+          maxLength: 5000
+          example: This message contains testbadword and a restricted phrase.
+        sourceSystem:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: crm-service
+        persistRequest:
+          type: boolean
+          default: false
+          example: false
+    SanitizeTextResponse:
+      type: object
+      properties:
+        requestId:
+          type: string
+          format: uuid
+          nullable: true
+          example: 6d64c6b8-8f97-437f-90a0-3cc7c719f3d1
+        originalText:
+          type: string
+          example: This message contains testbadword.
+        sanitizedText:
+          type: string
+          example: This message contains ***.
+        matchedWordsCount:
+          type: integer
+          example: 1
+        processingTimeMs:
+          type: integer
+          example: 3
+        matchedWords:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchedWordResponse'
+    MatchedWordResponse:
+      type: object
+      properties:
+        sensitiveWordId:
+          type: integer
+          format: int64
+          example: 3
+        word:
+          type: string
+          example: scam
+        severityLevel:
+          type: integer
+          example: 4
+        replacementCount:
+          type: integer
+          example: 2
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-05-23T15:10:00Z'
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: Bad Request
+        message:
+          type: string
+          example: Validation failed
+        path:
+          type: string
+          example: /api/v1/sanitize
+        details:
+          type: object
+          nullable: true
+          additionalProperties: true
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: UP
+        service:
+          type: string
+          example: sensitive-words-service
+        checkedAt:
+          type: string
+          format: date-time
+          example: '2026-05-25T06:30:00Z'

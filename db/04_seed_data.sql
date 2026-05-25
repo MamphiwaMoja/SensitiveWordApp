@@ -47,30 +47,21 @@ IF NOT EXISTS (
     SELECT 1
     FROM sw.sensitive_words
     WHERE normalized_word = N'testbadword'
-      AND match_type = N'CONTAINS'
       AND is_active = 1
 )
 BEGIN
     INSERT INTO sw.sensitive_words (
         category_id,
         word,
-        replacement_value,
-        match_type,
         severity_level,
-        is_case_sensitive,
         is_active,
-        notes,
         created_by
     )
     VALUES (
         @profanity_category_id,
         N'testbadword',
-        N'******',
-        N'CONTAINS',
         3,
-        0,
         1,
-        N'Default profanity sample for sanitization smoke tests.',
         N'seed'
     );
 END;
@@ -80,30 +71,21 @@ IF NOT EXISTS (
     SELECT 1
     FROM sw.sensitive_words
     WHERE normalized_word = N'restricted phrase'
-      AND match_type = N'EXACT'
       AND is_active = 1
 )
 BEGIN
     INSERT INTO sw.sensitive_words (
         category_id,
         word,
-        replacement_value,
-        match_type,
         severity_level,
-        is_case_sensitive,
         is_active,
-        notes,
         created_by
     )
     VALUES (
         @compliance_category_id,
         N'restricted phrase',
-        N'[restricted]',
-        N'EXACT',
         4,
-        0,
         1,
-        N'Phrase-level exact match sample.',
         N'seed'
     );
 END;
@@ -113,63 +95,21 @@ IF NOT EXISTS (
     SELECT 1
     FROM sw.sensitive_words
     WHERE normalized_word = N'scam'
-      AND match_type = N'CONTAINS'
       AND is_active = 1
 )
 BEGIN
     INSERT INTO sw.sensitive_words (
         category_id,
         word,
-        replacement_value,
-        match_type,
         severity_level,
-        is_case_sensitive,
         is_active,
-        notes,
         created_by
     )
     VALUES (
         @fraud_category_id,
         N'scam',
-        N'[risk-term]',
-        N'CONTAINS',
         5,
-        0,
         1,
-        N'Fraud keyword sample.',
-        N'seed'
-    );
-END;
-GO
-
-IF NOT EXISTS (
-    SELECT 1
-    FROM sw.sensitive_words
-    WHERE word = N'\bID\d{4}\b'
-      AND match_type = N'REGEX'
-      AND is_active = 1
-)
-BEGIN
-    INSERT INTO sw.sensitive_words (
-        category_id,
-        word,
-        replacement_value,
-        match_type,
-        severity_level,
-        is_case_sensitive,
-        is_active,
-        notes,
-        created_by
-    )
-    VALUES (
-        @compliance_category_id,
-        N'\bID\d{4}\b',
-        N'[identifier]',
-        N'REGEX',
-        2,
-        0,
-        1,
-        N'Regex sample for identifier-like values.',
         N'seed'
     );
 END;

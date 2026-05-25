@@ -23,3 +23,10 @@ spring:
       hibernate:
         default_schema: sw
         format_sql: true
+
+sensitive-words:
+  security:
+    basic:
+      # Ignored by the local security filter chain, but kept explicit for local API clients.
+      username: local
+      password: local

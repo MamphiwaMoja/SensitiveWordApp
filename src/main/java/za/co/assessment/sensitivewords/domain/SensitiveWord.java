@@ -2,8 +2,6 @@ package za.co.assessment.sensitivewords.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -30,24 +28,15 @@ public class SensitiveWord extends AbstractAuditingEntity {
     @JoinColumn(name = "category_id")
     private SensitiveWordCategory category;
 
-    @Column(name = "word", nullable = false, length = 255)
+    @Column(name = "word", nullable = false, length = 510)
     private String word;
 
-    @Column(name = "normalized_word", insertable = false, updatable = false, length = 255)
+    // Computed by SQL Server to enforce consistent duplicate checks independent of input case.
+    @Column(name = "normalized_word", insertable = false, updatable = false, length = 510)
     private String normalizedWord;
-
-    @Column(name = "replacement_value", nullable = false, length = 255)
-    private String replacementValue = Constants.DEFAULT_REPLACEMENT;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "match_type", nullable = false, length = 20)
-    private MatchType matchType = MatchType.CONTAINS;
 
     @Column(name = "severity_level", nullable = false)
     private Integer severityLevel = 1;
-
-    @Column(name = "is_case_sensitive", nullable = false)
-    private Boolean caseSensitive = false;
 
     @Column(name = "is_active", nullable = false)
     private Boolean active = true;
@@ -55,33 +44,20 @@ public class SensitiveWord extends AbstractAuditingEntity {
     @Column(name = "effective_from", nullable = false)
     private LocalDateTime effectiveFrom;
 
-    @Column(name = "effective_to")
-    private LocalDateTime effectiveTo;
-
-    @Column(name = "notes", length = 500)
-    private String notes;
-
     @PrePersist
     void onCreate() {
         onCreateAudit();
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
+        // Service code applies the same defaults; this guards direct persistence paths as well.
         if (effectiveFrom == null) {
             effectiveFrom = now;
         }
         if (getCreatedBy() == null || getCreatedBy().isBlank()) {
             setCreatedBy(Constants.SYSTEM_ACCOUNT);
         }
-        if (replacementValue == null || replacementValue.isBlank()) {
-            replacementValue = Constants.DEFAULT_REPLACEMENT;
-        }
-        if (matchType == null) {
-            matchType = MatchType.CONTAINS;
-        }
         if (severityLevel == null) {
             severityLevel = 1;
-        }
-        if (caseSensitive == null) {
-            caseSensitive = false;
         }
         if (active == null) {
             active = true;
@@ -120,36 +96,12 @@ public class SensitiveWord extends AbstractAuditingEntity {
         this.normalizedWord = normalizedWord;
     }
 
-    public String getReplacementValue() {
-        return replacementValue;
-    }
-
-    public void setReplacementValue(String replacementValue) {
-        this.replacementValue = replacementValue;
-    }
-
-    public MatchType getMatchType() {
-        return matchType;
-    }
-
-    public void setMatchType(MatchType matchType) {
-        this.matchType = matchType;
-    }
-
     public Integer getSeverityLevel() {
         return severityLevel;
     }
 
     public void setSeverityLevel(Integer severityLevel) {
         this.severityLevel = severityLevel;
-    }
-
-    public Boolean getCaseSensitive() {
-        return caseSensitive;
-    }
-
-    public void setCaseSensitive(Boolean caseSensitive) {
-        this.caseSensitive = caseSensitive;
     }
 
     public Boolean getActive() {
@@ -166,21 +118,5 @@ public class SensitiveWord extends AbstractAuditingEntity {
 
     public void setEffectiveFrom(LocalDateTime effectiveFrom) {
         this.effectiveFrom = effectiveFrom;
-    }
-
-    public LocalDateTime getEffectiveTo() {
-        return effectiveTo;
-    }
-
-    public void setEffectiveTo(LocalDateTime effectiveTo) {
-        this.effectiveTo = effectiveTo;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
-    public void setNotes(String notes) {
-        this.notes = notes;
     }
 }

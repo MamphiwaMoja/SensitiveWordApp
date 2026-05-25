@@ -22,6 +22,9 @@ spring:
         jdbc:
           time_zone: UTC
 
+  liquibase:
+    change-log: classpath:config/liquibase/master.xml
+
 server:
   port: 8080
 
@@ -42,6 +45,8 @@ management:
 springdoc:
   swagger-ui:
     path: /swagger-ui/index.html
+    url: /openapi/sensitive-words-service.yaml
+    disable-swagger-default-url: true
   api-docs:
     path: /v3/api-docs
 
@@ -50,9 +55,18 @@ logging:
     za.co.assessment.sensitivewords: INFO
     org.hibernate.SQL: WARN
   pattern:
-    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] traceId=%X{traceId:-} %logger{36} - %msg%n"
 
 sensitive-words:
   retry:
     max-attempts: 3
     backoff-ms: 150
+  cache:
+    active-words:
+      scheduled-refresh-enabled: true
+      refresh-interval-ms: 300000
+  security:
+    basic:
+      username: ${SECURITY_BASIC_USERNAME:sensitive-words}
+      password: ${SECURITY_BASIC_PASSWORD:}
+      role: ${SECURITY_BASIC_ROLE:API_USER}

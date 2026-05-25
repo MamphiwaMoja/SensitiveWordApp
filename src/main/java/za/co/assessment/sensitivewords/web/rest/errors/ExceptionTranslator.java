@@ -1,5 +1,7 @@
 package za.co.assessment.sensitivewords.web.rest.errors;
 
+import brave.Span;
+import brave.Tracer;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +28,13 @@ import java.util.stream.Collectors;
 public class ExceptionTranslator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExceptionTranslator.class);
+    private static final String TRACE_ID_HEADER = "X-Trace-Id";
+
+    private final Tracer tracer;
+
+    public ExceptionTranslator(Tracer tracer) {
+        this.tracer = tracer;
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
@@ -88,6 +97,7 @@ public class ExceptionTranslator {
     }
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, HttpServletRequest request, Object details) {
+        // Keep every error payload consistent so clients can handle validation and server errors uniformly.
         ErrorResponse response = new ErrorResponse(
                 Instant.now(),
                 status.value(),
@@ -96,7 +106,19 @@ public class ExceptionTranslator {
                 request.getRequestURI(),
                 details
         );
-        return ResponseEntity.status(status).body(response);
+
+        ResponseEntity.BodyBuilder builder = ResponseEntity.status(status);
+        // Error responses carry the same trace id header as successful controller responses.
+        String traceId = currentTraceId();
+        if (traceId != null) {
+            builder.header(TRACE_ID_HEADER, traceId);
+        }
+        return builder.body(response);
+    }
+
+    private String currentTraceId() {
+        Span span = tracer.currentSpan();
+        return span == null ? null : span.context().traceIdString();
     }
 
     private String resolveNotReadableMessage(HttpMessageNotReadableException ex) {

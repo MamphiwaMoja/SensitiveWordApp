@@ -17,14 +17,15 @@ public abstract class AbstractAuditingEntity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "created_by", nullable = false, length = 100)
+    @Column(name = "created_by", nullable = false, length = 200)
     private String createdBy = Constants.SYSTEM_ACCOUNT;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "updated_by", length = 200)
     private String updatedBy;
 
     @PrePersist
     protected void onCreateAudit() {
+        // Database scripts own the schema, so entity callbacks fill only application-level audit defaults.
         if (createdAt == null) {
             createdAt = LocalDateTime.now(ZoneOffset.UTC);
         }
@@ -35,6 +36,7 @@ public abstract class AbstractAuditingEntity {
 
     @PreUpdate
     protected void onUpdateAudit() {
+        // Always stamp updates in UTC to keep audit ordering stable across deployment regions.
         updatedAt = LocalDateTime.now(ZoneOffset.UTC);
         if (updatedBy == null || updatedBy.isBlank()) {
             updatedBy = Constants.SYSTEM_ACCOUNT;

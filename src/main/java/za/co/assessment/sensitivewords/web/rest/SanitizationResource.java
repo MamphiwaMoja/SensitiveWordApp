@@ -1,5 +1,7 @@
 package za.co.assessment.sensitivewords.web.rest;
 
+import brave.Span;
+import brave.Tracer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -7,6 +9,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,20 +23,25 @@ import za.co.assessment.sensitivewords.service.SanitizationService;
 import za.co.assessment.sensitivewords.web.rest.errors.ErrorMessages;
 
 @RestController
-@RequestMapping(ApiPaths.SANITIZE)
+@RequestMapping("/api/v1/sanitize")
 @Tag(name = "Sanitization", description = "APIs for sanitizing incoming text")
 public class SanitizationResource {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SanitizationResource.class);
+    private static final String TRACE_ID_HEADER = "X-Trace-Id";
+
+    private final Tracer tracer;
     private final SanitizationService sanitizationService;
 
-    public SanitizationResource(SanitizationService sanitizationService) {
+    public SanitizationResource(Tracer tracer, SanitizationService sanitizationService) {
+        this.tracer = tracer;
         this.sanitizationService = sanitizationService;
     }
 
     @PostMapping
     @Operation(
-            summary = "Sanitize input text using active sensitive-word rules",
-            description = "Applies active sensitive-word rules in priority order and returns the sanitized text. "
+            summary = "Sanitize input text using active sensitive words",
+            description = "Replaces active sensitive words from the database with the default mask and returns the sanitized text. "
                     + "Request payload persistence is disabled by default and must be explicitly enabled."
     )
     @ApiResponses({
@@ -53,6 +62,39 @@ public class SanitizationResource {
             )
     })
     public ResponseEntity<SanitizeTextResponse> sanitize(@Valid @RequestBody SanitizeTextRequest request) {
-        return ResponseEntity.ok(sanitizationService.sanitize(request));
+        long startTime = System.currentTimeMillis();
+        // Do not log inputText; log length and routing metadata so payload contents stay private.
+        LOGGER.info(
+                "REST request to sanitize text from sourceSystem={}, persistRequest={}, inputLength={}",
+                request.sourceSystem(),
+                request.shouldPersistRequest(),
+                request.inputText() == null ? 0 : request.inputText().length()
+        );
+
+        SanitizeTextResponse response = sanitizationService.sanitize(request);
+
+        LOGGER.info(
+                "Sanitize request completed for sourceSystem={} with matchedWordsCount={}, requestId={}. Duration: {} ms",
+                request.sourceSystem(),
+                response.matchedWordsCount(),
+                response.requestId(),
+                System.currentTimeMillis() - startTime
+        );
+
+        return withTraceHeader(ResponseEntity.ok()).body(response);
+    }
+
+    private ResponseEntity.BodyBuilder withTraceHeader(ResponseEntity.BodyBuilder builder) {
+        // Mirror the active Brave trace id in the response header without creating a second tracing path.
+        String traceId = currentTraceId();
+        if (traceId != null) {
+            builder.header(TRACE_ID_HEADER, traceId);
+        }
+        return builder;
+    }
+
+    private String currentTraceId() {
+        Span span = tracer.currentSpan();
+        return span == null ? null : span.context().traceIdString();
     }
 }

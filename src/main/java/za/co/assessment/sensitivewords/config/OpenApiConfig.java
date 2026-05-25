@@ -15,7 +15,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Sensitive Words Service API")
                         .version("v1")
-                        .description("API for managing sensitive-word rules and sanitizing input text.")
+                        .description("API for managing sensitive words and sanitizing input text.")
                         .contact(new Contact().name("Engineering Team")));
     }
 }

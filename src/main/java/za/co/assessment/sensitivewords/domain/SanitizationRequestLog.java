@@ -42,6 +42,7 @@ public class SanitizationRequestLog {
 
     @PrePersist
     void onCreate() {
+        // Request logging is opt-in, but persisted rows still need a complete audit envelope.
         if (requestId == null) {
             requestId = UUID.randomUUID();
         }
