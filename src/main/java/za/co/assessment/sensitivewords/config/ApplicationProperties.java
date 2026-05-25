@@ -7,8 +7,20 @@ public class ApplicationProperties {
 
     private final Retry retry = new Retry();
 
+    private final Security security = new Security();
+
+    private final Cache cache = new Cache();
+
     public Retry getRetry() {
         return retry;
+    }
+
+    public Security getSecurity() {
+        return security;
+    }
+
+    public Cache getCache() {
+        return cache;
     }
 
     public static class Retry {
@@ -31,6 +43,80 @@ public class ApplicationProperties {
 
         public void setBackoffMs(long backoffMs) {
             this.backoffMs = backoffMs;
+        }
+    }
+
+    public static class Security {
+
+        private final Basic basic = new Basic();
+
+        public Basic getBasic() {
+            return basic;
+        }
+
+        public static class Basic {
+
+            private String username = "sensitive-words";
+
+            private String password;
+
+            private String role = "API_USER";
+
+            public String getUsername() {
+                return username;
+            }
+
+            public void setUsername(String username) {
+                this.username = username;
+            }
+
+            public String getPassword() {
+                return password;
+            }
+
+            public void setPassword(String password) {
+                this.password = password;
+            }
+
+            public String getRole() {
+                return role;
+            }
+
+            public void setRole(String role) {
+                this.role = role;
+            }
+        }
+    }
+
+    public static class Cache {
+
+        private final ActiveWords activeWords = new ActiveWords();
+
+        public ActiveWords getActiveWords() {
+            return activeWords;
+        }
+
+        public static class ActiveWords {
+
+            private boolean scheduledRefreshEnabled = true;
+
+            private long refreshIntervalMs = 300_000L;
+
+            public boolean isScheduledRefreshEnabled() {
+                return scheduledRefreshEnabled;
+            }
+
+            public void setScheduledRefreshEnabled(boolean scheduledRefreshEnabled) {
+                this.scheduledRefreshEnabled = scheduledRefreshEnabled;
+            }
+
+            public long getRefreshIntervalMs() {
+                return refreshIntervalMs;
+            }
+
+            public void setRefreshIntervalMs(long refreshIntervalMs) {
+                this.refreshIntervalMs = refreshIntervalMs;
+            }
         }
     }
 }

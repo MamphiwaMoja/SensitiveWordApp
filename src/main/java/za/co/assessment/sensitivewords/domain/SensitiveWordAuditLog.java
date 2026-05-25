@@ -40,7 +40,7 @@ public class SensitiveWordAuditLog {
     @Column(name = "new_value", columnDefinition = "NVARCHAR(MAX)")
     private String newValue;
 
-    @Column(name = "changed_by", nullable = false, length = 100)
+    @Column(name = "changed_by", nullable = false, length = 200)
     private String changedBy = Constants.SYSTEM_ACCOUNT;
 
     @Column(name = "changed_at", nullable = false)
@@ -48,6 +48,7 @@ public class SensitiveWordAuditLog {
 
     @PrePersist
     void onCreate() {
+        // Audit rows are append-only snapshots, so creation metadata is set once on insert.
         if (changedAt == null) {
             changedAt = LocalDateTime.now(ZoneOffset.UTC);
         }

@@ -21,7 +21,7 @@ curl -X POST http://localhost:8080/api/v1/sanitize \
 ```bash
 curl -X POST http://localhost:8080/api/v1/sensitive-words \
   -H "Content-Type: application/json" \
-  -d '{"word":"local-demo-term","replacementValue":"[removed]","matchType":"CONTAINS","severityLevel":2,"caseSensitive":false,"active":true,"notes":"Created from curl smoke test"}'
+  -d '{"word":"local-demo-term","severityLevel":2,"active":true}'
 ```
 
 ## Update a sensitive word
@@ -31,7 +31,7 @@ Replace `{id}` with an actual ID returned from the list endpoint.
 ```bash
 curl -X PATCH http://localhost:8080/api/v1/sensitive-words/{id} \
   -H "Content-Type: application/json" \
-  -d '{"replacementValue":"***","severityLevel":3,"notes":"Updated from curl smoke test"}'
+  -d '{"severityLevel":3}'
 ```
 
 ## Deactivate a sensitive word

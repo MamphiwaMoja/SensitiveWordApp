@@ -40,14 +40,15 @@ public class SensitiveWordCategory {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "created_by", nullable = false, length = 100)
+    @Column(name = "created_by", nullable = false, length = 200)
     private String createdBy = Constants.SYSTEM_ACCOUNT;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "updated_by", length = 200)
     private String updatedBy;
 
     @PrePersist
     void onCreate() {
+        // Categories are managed internally; default missing audit fields to the system actor.
         if (createdAt == null) {
             createdAt = LocalDateTime.now(ZoneOffset.UTC);
         }
@@ -61,6 +62,7 @@ public class SensitiveWordCategory {
 
     @PreUpdate
     void onUpdate() {
+        // Keep category updates aligned with the same UTC audit model as sensitive-word changes.
         updatedAt = LocalDateTime.now(ZoneOffset.UTC);
         if (updatedBy == null || updatedBy.isBlank()) {
             updatedBy = Constants.SYSTEM_ACCOUNT;

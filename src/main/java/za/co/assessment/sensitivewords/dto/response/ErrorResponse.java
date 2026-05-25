@@ -3,7 +3,6 @@ package za.co.assessment.sensitivewords.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
-import za.co.assessment.sensitivewords.web.rest.ApiPaths;
 import za.co.assessment.sensitivewords.web.rest.errors.ErrorMessages;
 
 @Schema(name = "ErrorResponse", description = "Standard API error response.")
@@ -16,7 +15,7 @@ public record ErrorResponse(
         String error,
         @Schema(example = ErrorMessages.VALIDATION_FAILED)
         String message,
-        @Schema(example = ApiPaths.SANITIZE)
+        @Schema(example = "/api/v1/sanitize")
         String path,
         @Schema(description = "Optional structured error details.")
         Object details

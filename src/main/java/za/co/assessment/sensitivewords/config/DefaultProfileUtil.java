@@ -10,6 +10,7 @@ public final class DefaultProfileUtil {
     }
 
     public static void addDefaultProfile(SpringApplication app, String defaultProfile) {
+        // Keep local startup explicit without requiring every run command to pass a profile.
         Map<String, Object> defaultProperties = new HashMap<>();
         defaultProperties.put("spring.profiles.default", defaultProfile);
         app.setDefaultProperties(defaultProperties);

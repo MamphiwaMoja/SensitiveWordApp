@@ -12,6 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.retry.annotation.EnableRetry;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import za.co.assessment.sensitivewords.config.ApplicationProperties;
 import za.co.assessment.sensitivewords.config.Constants;
 import za.co.assessment.sensitivewords.config.DefaultProfileUtil;
@@ -19,6 +20,7 @@ import za.co.assessment.sensitivewords.config.DefaultProfileUtil;
 @SpringBootApplication
 @EnableConfigurationProperties(ApplicationProperties.class)
 @EnableRetry
+@EnableScheduling
 public class SensitiveWordsServiceApplication {
 
     private static final Logger log = LoggerFactory.getLogger(SensitiveWordsServiceApplication.class);

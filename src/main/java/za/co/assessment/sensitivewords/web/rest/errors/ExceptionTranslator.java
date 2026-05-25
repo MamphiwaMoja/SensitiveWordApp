@@ -1,5 +1,7 @@
 package za.co.assessment.sensitivewords.web.rest.errors;
 
+import brave.Span;
+import brave.Tracer;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,15 +19,20 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import za.co.assessment.sensitivewords.dto.response.ErrorResponse;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class ExceptionTranslator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExceptionTranslator.class);
+    private static final String TRACE_ID_HEADER = "X-Trace-Id";
+
+    private final Tracer tracer;
+
+    public ExceptionTranslator(Tracer tracer) {
+        this.tracer = tracer;
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
@@ -88,6 +95,7 @@ public class ExceptionTranslator {
     }
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, HttpServletRequest request, Object details) {
+        // Keep every error payload consistent so clients can handle validation and server errors uniformly.
         ErrorResponse response = new ErrorResponse(
                 Instant.now(),
                 status.value(),
@@ -96,19 +104,22 @@ public class ExceptionTranslator {
                 request.getRequestURI(),
                 details
         );
-        return ResponseEntity.status(status).body(response);
+
+        ResponseEntity.BodyBuilder builder = ResponseEntity.status(status);
+        // Error responses carry the same trace id header as successful controller responses.
+        String traceId = currentTraceId();
+        if (traceId != null) {
+            builder.header(TRACE_ID_HEADER, traceId);
+        }
+        return builder.body(response);
+    }
+
+    private String currentTraceId() {
+        Span span = tracer.currentSpan();
+        return span == null ? null : span.context().traceIdString();
     }
 
     private String resolveNotReadableMessage(HttpMessageNotReadableException ex) {
-        Throwable cause = ex.getMostSpecificCause();
-        if (cause instanceof InvalidFormatException invalidFormat) {
-            String fieldName = resolveFieldName(invalidFormat);
-            if (invalidFormat.getTargetType() != null && invalidFormat.getTargetType().isEnum()) {
-                // Enum parse errors are common client mistakes, so return a direct field-level message.
-                return "Invalid value '" + invalidFormat.getValue() + "' for field '" + fieldName + "'";
-            }
-        }
-
         return ErrorMessages.MALFORMED_JSON_REQUEST;
     }
 
@@ -122,16 +133,6 @@ public class ExceptionTranslator {
         String fieldName = resolveFieldName(invalidFormat);
         details.put("field", fieldName);
         details.put("rejectedValue", invalidFormat.getValue());
-
-        Class<?> targetType = invalidFormat.getTargetType();
-        if (targetType != null && targetType.isEnum()) {
-            details.put(
-                    "allowedValues",
-                    Arrays.stream(targetType.getEnumConstants())
-                            .map(String::valueOf)
-                            .collect(Collectors.toList())
-            );
-        }
 
         return details;
     }

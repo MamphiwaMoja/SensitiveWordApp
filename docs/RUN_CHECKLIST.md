@@ -24,8 +24,9 @@ db/01_create_database.sql
 db/02_create_schema.sql
 db/03_create_tables.sql
 db/04_seed_data.sql
-db/05_test_connection_and_queries.sql
 ```
+
+You can run `db/05_test_connection_and_queries.sql` afterward as a quick verification script.
 
 Then confirm the database exists:
 
@@ -93,7 +94,7 @@ DB_PASSWORD=ChangeMe!12345
 You can either:
 
 - set environment variables, or
-- edit `src/main/resources/application-local.yml` temporarily for local testing
+- edit `src/main/resources/config/application-local.yml` temporarily for local testing
 
 Do not commit real passwords.
 

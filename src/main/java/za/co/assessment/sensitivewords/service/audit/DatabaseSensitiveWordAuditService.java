@@ -32,11 +32,10 @@ public class DatabaseSensitiveWordAuditService implements SensitiveWordAuditServ
 
     @Override
     public String snapshot(SensitiveWord word) {
+        // Store a compact JSON-like snapshot so audit reads do not depend on lazy entity state later.
         return "{" +
                 "\"id\":" + word.getId() +
                 ",\"word\":\"" + escape(word.getWord()) + "\"" +
-                ",\"matchType\":\"" + word.getMatchType() + "\"" +
-                ",\"replacementValue\":\"" + escape(word.getReplacementValue()) + "\"" +
                 ",\"severityLevel\":" + word.getSeverityLevel() +
                 ",\"active\":" + word.getActive() +
                 "}";
@@ -53,6 +52,7 @@ public class DatabaseSensitiveWordAuditService implements SensitiveWordAuditServ
     }
 
     private String escape(String value) {
+        // Snapshot strings are assembled without a JSON mapper to keep the audit dependency surface small.
         return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 @Schema(name = "SanitizeTextRequest", description = "Payload containing the text to sanitize.")
 public record SanitizeTextRequest(
         @Schema(
-                description = "Input text that should be sanitized using active sensitive-word rules.",
+                description = "Input text that should be sanitized using active sensitive words.",
                 example = "This message contains testbadword and a restricted phrase."
         )
         @NotBlank(message = "inputText is required")

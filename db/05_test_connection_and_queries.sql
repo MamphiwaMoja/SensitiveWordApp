@@ -25,10 +25,7 @@ SELECT TOP (20)
     sensitive_word_id,
     word,
     normalized_word,
-    replacement_value,
-    match_type,
     severity_level,
-    is_case_sensitive,
     is_active
 FROM sw.sensitive_words
 ORDER BY severity_level DESC, word ASC;
