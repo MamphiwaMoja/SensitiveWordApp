@@ -1,5 +1,6 @@
 name: CI
 
+# Run CI for changes targeting the main branches, for pull requests, and on manual dispatch.
 on:
   push:
     branches:
@@ -8,10 +9,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Avoid wasting runner time on outdated pushes to the same branch or PR.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Keep the default token scoped to the permissions this workflow actually needs.
 permissions:
   contents: read
   pull-requests: read
@@ -44,6 +47,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Unit tests only run after the project compiles cleanly.
     needs: compile
     steps:
       - name: Checkout
@@ -56,13 +60,62 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
 
-      - name: Run unit tests
-        run: mvn -B -ntp test
+      - name: Run unit tests with coverage
+        run: mvn -B -ntp test jacoco:report
+
+      - name: Summarize test coverage
+        shell: bash
+        run: |
+          csv="target/site/jacoco/jacoco.csv"
+          if [[ ! -f "${csv}" ]]; then
+            echo "::error::JaCoCo CSV report was not generated at ${csv}."
+            exit 1
+          fi
+
+          read instruction_coverage line_coverage < <(
+            awk -F, '
+              NR > 1 {
+                instruction_missed += $4
+                instruction_covered += $5
+                line_missed += $8
+                line_covered += $9
+              }
+              END {
+                instruction_total = instruction_missed + instruction_covered
+                line_total = line_missed + line_covered
+                instruction_pct = instruction_total == 0 ? 0 : instruction_covered * 100 / instruction_total
+                line_pct = line_total == 0 ? 0 : line_covered * 100 / line_total
+                printf "%.2f %.2f", instruction_pct, line_pct
+              }
+            ' "${csv}"
+          )
+
+          echo "Instruction coverage: ${instruction_coverage}%"
+          echo "Line coverage: ${line_coverage}%"
+
+          {
+            echo "### Test Coverage"
+            echo ""
+            echo "| Metric | Coverage |"
+            echo "| --- | ---: |"
+            echo "| Line | ${line_coverage}% |"
+            echo "| Instruction | ${instruction_coverage}% |"
+            echo ""
+            echo "The full JaCoCo HTML report is uploaded as the \`jacoco-report\` artifact."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload JaCoCo report
+        uses: actions/upload-artifact@v6
+        with:
+          name: jacoco-report
+          path: target/site/jacoco
+          if-no-files-found: error
 
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    # Maven verify runs the SQL Server Testcontainers integration suite after unit tests pass.
     needs: unit-tests
     steps:
       - name: Checkout
@@ -82,6 +135,7 @@ jobs:
     name: Static Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    # CodeQL only needs a successful compile path, so it can run in parallel with tests.
     needs: compile
     steps:
       - name: Checkout
@@ -98,6 +152,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: java
+          # Manual build mode lets Maven compile the project exactly as the app expects.
           build-mode: manual
           queries: security-extended,security-and-quality
 
@@ -111,6 +166,7 @@ jobs:
     name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # Dependency scanning is independent from tests once the dependency graph compiles.
     needs: compile
     env:
       NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
@@ -128,12 +184,14 @@ jobs:
       - name: Cache OWASP Dependency-Check data
         uses: actions/cache@v5
         with:
+          # Cache NVD data to reduce repeated downloads and rate-limit exposure.
           path: ~/.dependency-check
           key: dependency-check-v3-${{ runner.os }}-${{ hashFiles('pom.xml') }}
           restore-keys: |
             dependency-check-v3-${{ runner.os }}-
 
       - name: Review dependency changes
+        # dependency-review-action is useful for public PRs, but can be unavailable in private fork contexts.
         if: ${{ github.event_name == 'pull_request' && github.event.repository.private == false }}
         uses: actions/dependency-review-action@v5
         with:
@@ -154,6 +212,7 @@ jobs:
           args=(
             "org.owasp:dependency-check-maven:12.2.2:check"
             "-DfailBuildOnCVSS=7"
+            # Keep CI from failing solely because the NVD service is unavailable; the report is still uploaded.
             "-DfailOnError=false"
             "-Dformats=HTML,JSON"
             "-DdataDirectory=$HOME/.dependency-check"
@@ -175,6 +234,7 @@ jobs:
           mvn -B -ntp "${args[@]}"
 
       - name: Upload dependency scan report
+        # Upload the report even when the scan step warns or finds vulnerable dependencies.
         if: always()
         uses: actions/upload-artifact@v6
         with:
@@ -186,6 +246,7 @@ jobs:
     name: Docker Image Build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Build the image only after tests, static analysis, and dependency scanning have completed.
     needs:
       - integration-tests
       - static-analysis
@@ -202,6 +263,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          # CI validates the image build without publishing it to a registry.
           push: false
           tags: ${{ env.IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha

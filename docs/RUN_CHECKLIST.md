@@ -17,7 +17,9 @@ Use this checklist before running the Spring Boot application.
 
 ## 2. Database checklist
 
-Run the setup scripts in this order:
+Liquibase can create the schema, tables, indexes, and seed data when the configured database user has DDL permissions.
+
+For the documented local setup, the app uses the least-privilege `sensitive_words_app` login. That user is granted access after the schema exists, so run these bootstrap scripts first:
 
 ```text
 db/01_create_database.sql
@@ -27,6 +29,8 @@ db/04_seed_data.sql
 ```
 
 You can run `db/05_test_connection_and_queries.sql` afterward as a quick verification script.
+
+If you run the app with a database user that has migration privileges, only `db/01_create_database.sql` is required before startup; Liquibase will apply `src/main/resources/config/liquibase/master.xml`.
 
 Then confirm the database exists:
 

@@ -1,5 +1,7 @@
 # Sensitive Words Service
 
+![Coverage](.github/badges/coverage.svg)
+
 Spring Boot microservice for managing sensitive-word rules and sanitizing incoming text.
 
 ## Stack
@@ -46,7 +48,7 @@ docker compose up --build
 What this does:
 
 - starts SQL Server in a container
-- runs all database setup and seed scripts automatically
+- runs the local database bootstrap scripts automatically
 - builds the Spring Boot app image
 - starts the app on port `8080`
 
@@ -78,7 +80,9 @@ docker compose up --build
 
 ### 3. Create the database and schema
 
-Run the scripts in this order:
+Liquibase is enabled and can create the `sw` schema, tables, indexes, and seed rows when the configured database user has DDL permissions.
+
+For the documented local setup, the app uses the least-privilege `sensitive_words_app` login. That user is granted access after the schema exists, so run these bootstrap scripts first:
 
 ```text
 db/01_create_database.sql
@@ -99,7 +103,9 @@ Optional verification queries:
 db/05_test_connection_and_queries.sql
 ```
 
-The scripts create:
+If you instead run the app with a database user that has migration privileges, only the database itself must exist before startup. In that mode, run `db/01_create_database.sql`, configure the privileged user, and let Liquibase apply `src/main/resources/config/liquibase/master.xml`.
+
+The local bootstrap scripts create:
 
 - database: `SensitiveWordsDb`
 - schema: `sw`
@@ -211,7 +217,7 @@ curl -X DELETE http://localhost:8080/api/v1/sensitive-words/1
 - Active-word lookup orders longer entries first so overlapping phrases replace predictably
 - Sanitization uses literal, case-insensitive word replacement with the constant `***`
 - Request payload persistence is disabled by default to reduce risk around sensitive content
-- Hibernate DDL generation is disabled; schema is managed through Liquibase for app startup and SQL scripts for manual/Docker setup
+- Hibernate DDL generation is disabled; schema migrations live in Liquibase, while the SQL scripts support local least-privilege and Docker bootstrap paths
 - Non-local profiles require HTTP Basic authentication for API routes, while health endpoints remain public
 
 ## Production deployment
@@ -220,7 +226,7 @@ curl -X DELETE http://localhost:8080/api/v1/sensitive-words/1
 - Run the sanitize endpoint as the public-facing route, and restrict CRUD endpoints to an internal network, VPN, or admin gateway.
 - Use a managed SQL Server instance or a highly available SQL Server deployment instead of a local containerized database.
 - Store database credentials in a secrets manager or environment-level secret store, not in source-controlled config.
-- Apply the SQL scripts as part of deployment or release automation before promoting the application.
+- Apply Liquibase migrations as part of deployment or release automation before promoting the application.
 - Enable health checks, central logging, and metrics so failed instances can be replaced automatically and request behavior can be monitored.
 - Use rolling deployments so new versions come up before old instances are removed.
 
@@ -251,8 +257,10 @@ Remaining production-scale improvements:
 Run locally with:
 
 ```bash
-mvn test
+mvn test jacoco:report
 ```
+
+The JaCoCo HTML coverage report is generated at `target/site/jacoco/index.html`.
 
 The test suite covers:
 
