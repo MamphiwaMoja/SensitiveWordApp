@@ -45,14 +45,32 @@ public class SensitiveWordsServiceApplication {
             activeProfiles.contains(Constants.SPRING_PROFILE_LOCAL) &&
             activeProfiles.contains(Constants.SPRING_PROFILE_PROD)
         ) {
-            log.error("Misconfigured application: 'local' and 'prod' profiles must not run together.");
+            failForConflictingProfiles("local", "prod");
         }
         if (
             activeProfiles.contains(Constants.SPRING_PROFILE_TEST) &&
             activeProfiles.contains(Constants.SPRING_PROFILE_PROD)
         ) {
-            log.error("Misconfigured application: 'test' and 'prod' profiles must not run together.");
+            failForConflictingProfiles("test", "prod");
         }
+        if (
+            activeProfiles.contains(Constants.SPRING_PROFILE_DEV) &&
+            activeProfiles.contains(Constants.SPRING_PROFILE_PROD)
+        ) {
+            failForConflictingProfiles("dev", "prod");
+        }
+        if (
+            activeProfiles.contains(Constants.SPRING_PROFILE_STAGING) &&
+            activeProfiles.contains(Constants.SPRING_PROFILE_PROD)
+        ) {
+            failForConflictingProfiles("staging", "prod");
+        }
+    }
+
+    private void failForConflictingProfiles(String firstProfile, String secondProfile) {
+        throw new IllegalStateException(
+            "Misconfigured application: '" + firstProfile + "' and '" + secondProfile + "' profiles must not run together."
+        );
     }
 
     private static void logApplicationStartup(Environment env) {

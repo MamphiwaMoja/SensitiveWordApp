@@ -39,6 +39,7 @@ services:
       db-init:
         condition: service_completed_successfully
     environment:
+      SPRING_PROFILES_ACTIVE: "local"
       DB_URL: "jdbc:sqlserver://db:1433;databaseName=SensitiveWordsDb;encrypt=true;trustServerCertificate=true"
       DB_USERNAME: "sensitive_words_app"
       DB_PASSWORD: "ChangeMe!12345"

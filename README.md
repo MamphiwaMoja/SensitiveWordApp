@@ -37,6 +37,27 @@ Spring Boot microservice for managing sensitive-word rules and sanitizing incomi
 
 ## Local setup
 
+### Runtime profiles
+
+| Profile | Intended use | Database setup | Authentication |
+|---|---|---|---|
+| `local` | Developer machine and Docker Compose | Local SQL bootstrap scripts | Disabled for all routes |
+| `dev` | Shared development environment | Liquibase or pre-provisioned SQL Server | HTTP Basic required |
+| `test` | Automated tests and integration testing | Liquibase with test-provided datasource | HTTP Basic required |
+| `staging` | Production-like validation | Liquibase-managed migrations | HTTP Basic required |
+| `prod` | Production runtime | Liquibase-managed migrations | HTTP Basic required |
+
+Maven profiles map directly to Spring Boot runtime profiles:
+
+```bash
+mvn spring-boot:run -Plocal
+mvn spring-boot:run -Pdev
+mvn spring-boot:run -Pstaging
+mvn spring-boot:run -Pprod
+```
+
+The packaged Docker image defaults to `SPRING_PROFILES_ACTIVE=prod`. Docker Compose overrides this to `local`.
+
 ### 1. Fastest reviewer path
 
 If Docker Desktop is available, reviewers can start the full assessment stack with one command:
@@ -125,6 +146,14 @@ DB_USERNAME=sensitive_words_app
 DB_PASSWORD=ChangeMe!12345
 ```
 
+`dev`, `staging`, and `prod` require the same database variables without source-controlled defaults:
+
+```text
+DB_URL=jdbc:sqlserver://<host>:1433;databaseName=SensitiveWordsDb;encrypt=true;trustServerCertificate=true
+DB_USERNAME=<database-user>
+DB_PASSWORD=<database-password>
+```
+
 Example in PowerShell:
 
 ```powershell
@@ -155,7 +184,7 @@ curl -u sensitive-words:<set-a-secret> http://localhost:8080/api/v1/sensitive-wo
 
 ```bash
 mvn clean test
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+mvn spring-boot:run -Plocal
 ```
 
 ### 7. Open the application
@@ -218,6 +247,7 @@ curl -X DELETE http://localhost:8080/api/v1/sensitive-words/1
 - Sanitization uses literal, case-insensitive word replacement with the constant `***`
 - Request payload persistence is disabled by default to reduce risk around sensitive content
 - Hibernate DDL generation is disabled; schema migrations live in Liquibase, while the SQL scripts support local least-privilege and Docker bootstrap paths
+- Environment-specific config lives in `src/main/resources/config/application-<profile>.yml`
 - Non-local profiles require HTTP Basic authentication for API routes, while health endpoints remain public
 
 ## Production deployment

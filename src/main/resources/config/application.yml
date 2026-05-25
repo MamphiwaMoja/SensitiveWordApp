@@ -2,20 +2,15 @@ spring:
   application:
     name: sensitive-words-service
 
-  profiles:
-    group:
-      local:
-        - local
-      test:
-        - test
-      prod:
-        - prod
-
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: none
     properties:
+      jakarta:
+        persistence:
+          query:
+            timeout: ${JPA_QUERY_TIMEOUT_MS:5000}
       hibernate:
         default_schema: sw
         format_sql: true
@@ -24,11 +19,28 @@ spring:
 
   liquibase:
     change-log: classpath:config/liquibase/master.xml
+    enabled: false
+
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+  mvc:
+    async:
+      request-timeout: ${HTTP_ASYNC_REQUEST_TIMEOUT:30s}
+
+  transaction:
+    default-timeout: ${TX_DEFAULT_TIMEOUT:10s}
 
 server:
   port: 8080
+  shutdown: graceful
+  tomcat:
+    connection-timeout: ${SERVER_CONNECTION_TIMEOUT:10s}
 
 management:
+  health:
+    circuitbreakers:
+      enabled: true
   endpoints:
     web:
       exposure:
@@ -36,6 +48,8 @@ management:
           - health
           - info
           - metrics
+          - circuitbreakers
+          - circuitbreakerevents
   endpoint:
     health:
       show-details: when_authorized
@@ -57,7 +71,44 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] traceId=%X{traceId:-} %logger{36} - %msg%n"
 
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: ${CIRCUIT_BREAKER_SLIDING_WINDOW_SIZE:20}
+        minimum-number-of-calls: ${CIRCUIT_BREAKER_MINIMUM_CALLS:10}
+        failure-rate-threshold: ${CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD:50}
+        slow-call-rate-threshold: ${CIRCUIT_BREAKER_SLOW_CALL_RATE_THRESHOLD:50}
+        slow-call-duration-threshold: ${CIRCUIT_BREAKER_SLOW_CALL_DURATION:2s}
+        wait-duration-in-open-state: ${CIRCUIT_BREAKER_OPEN_WAIT_DURATION:30s}
+        permitted-number-of-calls-in-half-open-state: ${CIRCUIT_BREAKER_HALF_OPEN_CALLS:3}
+        automatic-transition-from-open-to-half-open-enabled: true
+        event-consumer-buffer-size: ${CIRCUIT_BREAKER_EVENT_BUFFER_SIZE:50}
+        record-exceptions:
+          - org.springframework.dao.TransientDataAccessException
+          - org.springframework.dao.CannotAcquireLockException
+          - org.springframework.dao.QueryTimeoutException
+          - org.springframework.transaction.CannotCreateTransactionException
+          - org.springframework.transaction.TransactionTimedOutException
+        ignore-exceptions:
+          - za.co.assessment.sensitivewords.web.rest.errors.BadRequestException
+          - za.co.assessment.sensitivewords.web.rest.errors.DuplicateSensitiveWordException
+          - za.co.assessment.sensitivewords.web.rest.errors.ResourceNotFoundException
+    instances:
+      sanitizationService:
+        base-config: default
+      sensitiveWordService:
+        base-config: default
+      activeSensitiveWordCache:
+        base-config: default
+
 sensitive-words:
+  timeouts:
+    read-transaction-seconds: ${READ_TRANSACTION_TIMEOUT_SECONDS:5}
+    write-transaction-seconds: ${WRITE_TRANSACTION_TIMEOUT_SECONDS:10}
+    sanitize-transaction-seconds: ${SANITIZE_TRANSACTION_TIMEOUT_SECONDS:10}
   retry:
     max-attempts: 3
     backoff-ms: 150

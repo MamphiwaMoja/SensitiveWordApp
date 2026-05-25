@@ -1,5 +1,6 @@
 package za.co.assessment.sensitivewords.service.Impl;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.dao.TransientDataAccessException;
@@ -7,6 +8,7 @@ import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.transaction.annotation.Transactional;
 import za.co.assessment.sensitivewords.domain.SanitizationRequestLog;
 import za.co.assessment.sensitivewords.dto.request.SanitizeTextRequest;
 import za.co.assessment.sensitivewords.dto.response.MatchedWordResponse;
@@ -48,6 +50,8 @@ public class SanitizationServiceImpl implements SanitizationService {
             backoff = @Backoff(delayExpression = "${sensitive-words.retry.backoff-ms:150}")
     )
     @Override
+    @CircuitBreaker(name = "sanitizationService")
+    @Transactional(timeoutString = "${sensitive-words.timeouts.sanitize-transaction-seconds:10}")
     public SanitizeTextResponse sanitize(SanitizeTextRequest request) {
         long startNanos = System.nanoTime();
         String originalText = request.inputText();

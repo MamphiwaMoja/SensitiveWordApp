@@ -1,5 +1,6 @@
 package za.co.assessment.sensitivewords.service.Impl;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.dao.CannotAcquireLockException;
@@ -9,6 +10,7 @@ import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.transaction.annotation.Transactional;
 import za.co.assessment.sensitivewords.config.Constants;
 import za.co.assessment.sensitivewords.domain.SensitiveWord;
 import za.co.assessment.sensitivewords.domain.SensitiveWordCategory;
@@ -61,6 +63,8 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
             backoff = @Backoff(delayExpression = "${sensitive-words.retry.backoff-ms:150}")
     )
     @Override
+    @CircuitBreaker(name = "sensitiveWordService")
+    @Transactional(readOnly = true, timeoutString = "${sensitive-words.timeouts.read-transaction-seconds:5}")
     public Page<SensitiveWordResponse> findAll(Pageable pageable) {
         return sensitiveWordRepository.findAll(pageable).map(mapper::toResponse);
     }
@@ -76,6 +80,8 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
             backoff = @Backoff(delayExpression = "${sensitive-words.retry.backoff-ms:150}")
     )
     @Override
+    @CircuitBreaker(name = "sensitiveWordService")
+    @Transactional(readOnly = true, timeoutString = "${sensitive-words.timeouts.read-transaction-seconds:5}")
     public SensitiveWordResponse findById(Long id) {
         return mapper.toResponse(getRequiredSensitiveWord(id));
     }
@@ -91,6 +97,8 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
             backoff = @Backoff(delayExpression = "${sensitive-words.retry.backoff-ms:150}")
     )
     @Override
+    @CircuitBreaker(name = "sensitiveWordService")
+    @Transactional(timeoutString = "${sensitive-words.timeouts.write-transaction-seconds:10}")
     public SensitiveWordResponse create(CreateSensitiveWordRequest request) {
         String normalizedWord = normalize(request.word());
         boolean active = request.active() == null || request.active();
@@ -123,6 +131,8 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
             backoff = @Backoff(delayExpression = "${sensitive-words.retry.backoff-ms:150}")
     )
     @Override
+    @CircuitBreaker(name = "sensitiveWordService")
+    @Transactional(timeoutString = "${sensitive-words.timeouts.write-transaction-seconds:10}")
     public SensitiveWordResponse update(Long id, UpdateSensitiveWordRequest request) {
         SensitiveWord existing = getRequiredSensitiveWord(id);
         String oldSnapshot = auditService.snapshot(existing);
@@ -171,6 +181,8 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
             backoff = @Backoff(delayExpression = "${sensitive-words.retry.backoff-ms:150}")
     )
     @Override
+    @CircuitBreaker(name = "sensitiveWordService")
+    @Transactional(timeoutString = "${sensitive-words.timeouts.write-transaction-seconds:10}")
     public void deactivate(Long id) {
         SensitiveWord existing = getRequiredSensitiveWord(id);
         String oldSnapshot = auditService.snapshot(existing);

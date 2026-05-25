@@ -1,9 +1,11 @@
 package za.co.assessment.sensitivewords.service.cache;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import za.co.assessment.sensitivewords.config.ApplicationProperties;
 import za.co.assessment.sensitivewords.domain.SensitiveWord;
 import za.co.assessment.sensitivewords.repository.SensitiveWordRepository;
@@ -30,6 +32,8 @@ public class ActiveSensitiveWordCache {
         this.properties = properties;
     }
 
+    @CircuitBreaker(name = "activeSensitiveWordCache")
+    @Transactional(readOnly = true, timeoutString = "${sensitive-words.timeouts.read-transaction-seconds:5}")
     public List<ActiveSensitiveWord> getActiveWords() {
         if (initialized) {
             return cachedWords;
@@ -43,6 +47,8 @@ public class ActiveSensitiveWordCache {
     }
 
     @Scheduled(fixedDelayString = "${sensitive-words.cache.active-words.refresh-interval-ms:300000}")
+    @CircuitBreaker(name = "activeSensitiveWordCache")
+    @Transactional(readOnly = true, timeoutString = "${sensitive-words.timeouts.read-transaction-seconds:5}")
     public void scheduledRefresh() {
         if (!properties.getCache().getActiveWords().isScheduledRefreshEnabled()) {
             return;
@@ -50,6 +56,8 @@ public class ActiveSensitiveWordCache {
         refresh();
     }
 
+    @CircuitBreaker(name = "activeSensitiveWordCache")
+    @Transactional(readOnly = true, timeoutString = "${sensitive-words.timeouts.read-transaction-seconds:5}")
     public synchronized List<ActiveSensitiveWord> refresh() {
         try {
             List<ActiveSensitiveWord> loadedWords = sensitiveWordRepository.findActiveWords()

@@ -15,7 +15,19 @@ Use this checklist before running the Spring Boot application.
 | TCP/IP enabled for SQL Server | Usually yes | SQL Server Configuration Manager |
 | Port 1433 reachable | Usually yes | Check SQL Server network config |
 
-## 2. Database checklist
+## 2. Profile checklist
+
+| Profile | Use it for | Run command |
+|---|---|---|
+| `local` | Developer machine or Docker Compose | `mvn spring-boot:run -Plocal` |
+| `dev` | Shared development environment | `mvn spring-boot:run -Pdev` |
+| `test` | Automated tests | `mvn spring-boot:run -Ptest` |
+| `staging` | Production-like validation | `mvn spring-boot:run -Pstaging` |
+| `prod` | Production runtime | `mvn spring-boot:run -Pprod` |
+
+The Docker image defaults to `prod`. Docker Compose sets `SPRING_PROFILES_ACTIVE=local`.
+
+## 3. Database checklist
 
 Liquibase can create the schema, tables, indexes, and seed data when the configured database user has DDL permissions.
 
@@ -65,7 +77,7 @@ FROM sw.sensitive_words;
 
 Expected: count should be greater than zero.
 
-## 3. SQL login checklist
+## 4. SQL login checklist
 
 The app needs one of these:
 
@@ -85,7 +97,7 @@ If it does not exist, run:
 db/06_create_app_login_optional.sql
 ```
 
-## 4. Application config checklist
+## 5. Application config checklist
 
 The local profile expects these values:
 
@@ -95,6 +107,17 @@ DB_USERNAME=sensitive_words_app
 DB_PASSWORD=ChangeMe!12345
 ```
 
+`dev`, `staging`, and `prod` require:
+
+```text
+DB_URL=jdbc:sqlserver://<host>:1433;databaseName=SensitiveWordsDb;encrypt=true;trustServerCertificate=true
+DB_USERNAME=<database-user>
+DB_PASSWORD=<database-password>
+SECURITY_BASIC_USERNAME=sensitive-words
+SECURITY_BASIC_PASSWORD=<set-a-secret>
+SECURITY_BASIC_ROLE=API_USER
+```
+
 You can either:
 
 - set environment variables, or
@@ -102,13 +125,13 @@ You can either:
 
 Do not commit real passwords.
 
-## 5. Run checklist
+## 6. Run checklist
 
 From the project root:
 
 ```bash
 mvn clean test
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+mvn spring-boot:run -Plocal
 ```
 
 Expected logs should show:
@@ -117,7 +140,7 @@ Expected logs should show:
 Started SensitiveWordsServiceApplication
 ```
 
-## 6. Browser checks
+## 7. Browser checks
 
 Open these URLs:
 
@@ -126,7 +149,7 @@ http://localhost:8080/actuator/health
 http://localhost:8080/swagger-ui/index.html
 ```
 
-## 7. API smoke test
+## 8. API smoke test
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/sanitize \
@@ -141,7 +164,7 @@ sanitizedText contains ***
 matchedWordsCount is greater than 0
 ```
 
-## 8. Common issues
+## 9. Common issues
 
 ### Login failed for user
 
