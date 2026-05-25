@@ -1,0 +1,7 @@
+.git
+.idea
+target
+tmp-pdf
+*.iml
+README.md.bak
+

@@ -1,0 +1,38 @@
+### Actuator health
+GET http://localhost:8080/actuator/health
+
+### List sensitive words
+GET http://localhost:8080/api/v1/sensitive-words?page=0&size=20
+
+### Sanitize text
+POST http://localhost:8080/api/v1/sanitize
+Content-Type: application/json
+
+{
+  "inputText": "This message contains testbadword and a restricted phrase.",
+  "sourceSystem": "http-file"
+}
+
+### Create sensitive word
+POST http://localhost:8080/api/v1/sensitive-words
+Content-Type: application/json
+
+{
+  "word": "local-demo-term",
+  "replacementValue": "[removed]",
+  "matchType": "CONTAINS",
+  "severityLevel": 2,
+  "caseSensitive": false,
+  "active": true,
+  "notes": "Created from HTTP smoke test"
+}
+
+### Patch sensitive word
+PATCH http://localhost:8080/api/v1/sensitive-words/1
+Content-Type: application/json
+
+{
+  "replacementValue": "***",
+  "severityLevel": 3,
+  "notes": "Updated from HTTP smoke test"
+}
