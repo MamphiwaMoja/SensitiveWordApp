@@ -85,13 +85,18 @@ db/01_create_database.sql
 db/02_create_schema.sql
 db/03_create_tables.sql
 db/04_seed_data.sql
-db/05_test_connection_and_queries.sql
 ```
 
 Optional local SQL login setup:
 
 ```text
 db/06_create_app_login_optional.sql
+```
+
+Optional verification queries:
+
+```text
+db/05_test_connection_and_queries.sql
 ```
 
 The scripts create:
@@ -202,9 +207,12 @@ curl -X DELETE http://localhost:8080/api/v1/sensitive-words/1
 - Layered structure: controller -> service -> repository -> MSSQL
 - DTOs are used for request and response contracts
 - Soft delete is implemented as word deactivation
+- Active sensitive words are cached in memory and invalidated after CRUD changes
+- Active-word lookup orders longer entries first so overlapping phrases replace predictably
 - Sanitization uses literal, case-insensitive word replacement with the constant `***`
 - Request payload persistence is disabled by default to reduce risk around sensitive content
-- Hibernate DDL generation is disabled; schema is managed explicitly through SQL scripts
+- Hibernate DDL generation is disabled; schema is managed through Liquibase for app startup and SQL scripts for manual/Docker setup
+- Non-local profiles require HTTP Basic authentication for API routes, while health endpoints remain public
 
 ## Production deployment
 
@@ -218,23 +226,25 @@ curl -X DELETE http://localhost:8080/api/v1/sensitive-words/1
 
 ## Performance considerations
 
-For the take-home submission, the implementation keeps rule lookup straightforward and readable. For production scale, the next optimizations would be:
+Current implementation:
 
 1. Cache active sensitive words in memory and invalidate on CRUD changes
 2. Keep filtered indexes on active words and lookup columns
 3. Prefer longest-word ordering when active words overlap
 4. Avoid persisting sanitization request bodies unless explicitly needed
-5. Add metrics around request latency, match counts, cache hit ratio, and database timings
+
+Remaining production-scale improvements:
+
+1. Add metrics around request latency, match counts, cache hit ratio, and database timings
+2. Add pagination response DTOs instead of serializing Spring `Page` directly
+3. Add rate limiting or request-size controls at the gateway for public sanitization traffic
 
 ## Additional enhancements for future work
 
-1. Testcontainers-based MSSQL integration tests
-2. Authentication and authorization for CRUD endpoints
-3. Role-based audit attribution instead of the fixed `api` actor
-4. Docker Compose for app + SQL Server local startup
-5. CI pipeline running build, tests, and static analysis
-6. Actuator metrics export to Prometheus/Grafana
-7. Separate admin and runtime APIs if rule management and sanitization traffic scale independently
+1. Role-based authorization so CRUD endpoints can be limited to admin users
+2. Actor-aware audit attribution instead of the fixed `system` actor
+3. Actuator metrics export to Prometheus/Grafana
+4. Separate admin and runtime APIs if rule management and sanitization traffic scale independently
 
 ## Test status
 

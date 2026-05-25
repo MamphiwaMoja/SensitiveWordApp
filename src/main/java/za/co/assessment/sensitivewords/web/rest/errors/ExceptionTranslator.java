@@ -19,10 +19,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import za.co.assessment.sensitivewords.dto.response.ErrorResponse;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class ExceptionTranslator {
@@ -122,15 +120,6 @@ public class ExceptionTranslator {
     }
 
     private String resolveNotReadableMessage(HttpMessageNotReadableException ex) {
-        Throwable cause = ex.getMostSpecificCause();
-        if (cause instanceof InvalidFormatException invalidFormat) {
-            String fieldName = resolveFieldName(invalidFormat);
-            if (invalidFormat.getTargetType() != null && invalidFormat.getTargetType().isEnum()) {
-                // Enum parse errors are common client mistakes, so return a direct field-level message.
-                return "Invalid value '" + invalidFormat.getValue() + "' for field '" + fieldName + "'";
-            }
-        }
-
         return ErrorMessages.MALFORMED_JSON_REQUEST;
     }
 
@@ -144,16 +133,6 @@ public class ExceptionTranslator {
         String fieldName = resolveFieldName(invalidFormat);
         details.put("field", fieldName);
         details.put("rejectedValue", invalidFormat.getValue());
-
-        Class<?> targetType = invalidFormat.getTargetType();
-        if (targetType != null && targetType.isEnum()) {
-            details.put(
-                    "allowedValues",
-                    Arrays.stream(targetType.getEnumConstants())
-                            .map(String::valueOf)
-                            .collect(Collectors.toList())
-            );
-        }
 
         return details;
     }
