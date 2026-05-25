@@ -116,7 +116,7 @@ public class SanitizationServiceImpl implements SanitizationService {
     }
 
     private ReplacementResult replaceLiteralWord(String inputText, String word) {
-        Pattern pattern = Pattern.compile(Pattern.quote(word), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+        Pattern pattern = Pattern.compile(exactWordPattern(word), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
         Matcher matcher = pattern.matcher(inputText);
         StringBuffer sanitizedText = new StringBuffer();
         int replacementCount = 0;
@@ -128,6 +128,10 @@ public class SanitizationServiceImpl implements SanitizationService {
         matcher.appendTail(sanitizedText);
 
         return new ReplacementResult(sanitizedText.toString(), replacementCount);
+    }
+
+    private String exactWordPattern(String word) {
+        return "(?<![\\p{L}\\p{N}])" + Pattern.quote(word) + "(?![\\p{L}\\p{N}])";
     }
 
     private record SanitizationResult(String sanitizedText, List<MatchedWordResponse> matchedWords) {
