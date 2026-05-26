@@ -26,8 +26,8 @@ public class DatabaseSensitiveWordAuditService implements SensitiveWordAuditServ
     }
 
     @Override
-    public void recordDeactivate(SensitiveWord word, String oldSnapshot) {
-        audit(word, "DEACTIVATE", oldSnapshot, snapshot(word));
+    public void recordDelete(SensitiveWord word, String oldSnapshot) {
+        audit(null, "DELETE", oldSnapshot, null);
     }
 
     @Override

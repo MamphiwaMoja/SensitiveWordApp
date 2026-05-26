@@ -19,7 +19,9 @@ import za.co.assessment.sensitivewords.web.rest.errors.ExceptionTranslator;
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -90,6 +92,14 @@ class SensitiveWordResourceTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void delete_shouldReturnNoContent() throws Exception {
+        mockMvc.perform(delete(SENSITIVE_WORDS_PATH + "/42"))
+                .andExpect(status().isNoContent());
+
+        verify(sensitiveWordService).delete(42L);
     }
 
     @Test

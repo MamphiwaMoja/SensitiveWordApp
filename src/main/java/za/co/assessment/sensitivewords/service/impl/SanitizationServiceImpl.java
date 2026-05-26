@@ -1,4 +1,4 @@
-package za.co.assessment.sensitivewords.service.Impl;
+package za.co.assessment.sensitivewords.service.impl;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;

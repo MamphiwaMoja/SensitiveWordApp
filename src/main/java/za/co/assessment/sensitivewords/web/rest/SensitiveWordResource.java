@@ -59,7 +59,7 @@ public class SensitiveWordResource {
     @GetMapping("/sensitive-words")
     @Operation(
             summary = "List sensitive words",
-            description = "Returns a paginated list of sensitive-word records, including active and inactive entries."
+            description = "Returns a paginated list of sensitive-word records that have not been deleted."
     )
     @ApiResponses({
             @ApiResponse(
@@ -274,11 +274,14 @@ public class SensitiveWordResource {
     }
 
     @DeleteMapping("/sensitive-words/{id}")
-    @Operation(summary = "Deactivate a sensitive word")
+    @Operation(
+            summary = "Delete a sensitive word",
+            description = "Permanently removes the sensitive-word record from the database."
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "204",
-                    description = "Sensitive word deactivated",
+                    description = "Sensitive word deleted",
                     headers = @Header(name = TRACE_ID_HEADER, description = "Trace id for log correlation."),
                     content = @Content
             ),
@@ -303,18 +306,18 @@ public class SensitiveWordResource {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
-    public ResponseEntity<Void> deactivate(
+    public ResponseEntity<Void> delete(
             @Parameter(description = "Sensitive-word identifier.", example = "1")
             @Positive(message = "id must be greater than zero")
             @PathVariable Long id
     ) {
         long startTime = System.currentTimeMillis();
-        LOGGER.info("REST request to deactivate sensitive word with id={}", id);
+        LOGGER.info("REST request to delete sensitive word with id={}", id);
 
-        sensitiveWordService.deactivate(id);
+        sensitiveWordService.delete(id);
 
         LOGGER.info(
-                "Sensitive-word deactivate completed for id={}. Duration: {} ms",
+                "Sensitive-word delete completed for id={}. Duration: {} ms",
                 id,
                 System.currentTimeMillis() - startTime
         );

@@ -4,7 +4,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="003-create-sensitive-words" author="codex">
+    <changeSet id="003-create-sensitive-words" author="Mamphiwa Moja">
         <validCheckSum>ANY</validCheckSum>
         <preConditions onFail="MARK_RAN">
             <not>
@@ -28,7 +28,7 @@ CREATE TABLE sw.sensitive_words (
         ]]></sql>
     </changeSet>
 
-    <changeSet id="004-create-sensitive-words-active-unique-index" author="codex">
+    <changeSet id="004-create-sensitive-words-active-unique-index" author="Mamphiwa Moja">
         <preConditions onFail="MARK_RAN">
             <not>
                 <indexExists schemaName="sw" indexName="UX_sw_words_active_word"/>
@@ -37,7 +37,7 @@ CREATE TABLE sw.sensitive_words (
         <sql>CREATE UNIQUE INDEX UX_sw_words_active_word ON sw.sensitive_words(normalized_word) WHERE is_active = 1</sql>
     </changeSet>
 
-    <changeSet id="005-create-sensitive-words-active-index" author="codex">
+    <changeSet id="005-create-sensitive-words-active-index" author="Mamphiwa Moja">
         <preConditions onFail="MARK_RAN">
             <not>
                 <indexExists schemaName="sw" indexName="IX_sw_words_active"/>
@@ -46,7 +46,7 @@ CREATE TABLE sw.sensitive_words (
         <sql>CREATE INDEX IX_sw_words_active ON sw.sensitive_words(is_active, severity_level)</sql>
     </changeSet>
 
-    <changeSet id="007-create-sanitization-requests" author="codex">
+    <changeSet id="007-create-sanitization-requests" author="Mamphiwa Moja">
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists schemaName="sw" tableName="sanitization_requests"/>
@@ -67,7 +67,7 @@ CREATE TABLE sw.sanitization_requests (
         ]]></sql>
     </changeSet>
 
-    <changeSet id="008-create-sanitization-requests-created-at-index" author="codex">
+    <changeSet id="008-create-sanitization-requests-created-at-index" author="Mamphiwa Moja">
         <preConditions onFail="MARK_RAN">
             <not>
                 <indexExists schemaName="sw" indexName="IX_sw_sanitization_requests_created_at"/>
@@ -76,7 +76,7 @@ CREATE TABLE sw.sanitization_requests (
         <sql>CREATE INDEX IX_sw_sanitization_requests_created_at ON sw.sanitization_requests(created_at DESC)</sql>
     </changeSet>
 
-    <changeSet id="009-create-sensitive-word-audit-log" author="codex">
+    <changeSet id="009-create-sensitive-word-audit-log" author="Mamphiwa Moja">
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists schemaName="sw" tableName="sensitive_word_audit_log"/>
@@ -91,13 +91,13 @@ CREATE TABLE sw.sensitive_word_audit_log (
     new_value NVARCHAR(MAX) NULL,
     changed_by NVARCHAR(200) NOT NULL CONSTRAINT DF_sw_audit_changed_by DEFAULT (N'system'),
     changed_at DATETIME2(3) NOT NULL CONSTRAINT DF_sw_audit_changed_at DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT FK_sw_audit_sensitive_word FOREIGN KEY (sensitive_word_id) REFERENCES sw.sensitive_words(sensitive_word_id),
-    CONSTRAINT CK_sw_audit_action_type CHECK (action_type IN (N'INSERT', N'UPDATE', N'DEACTIVATE'))
+    CONSTRAINT FK_sw_audit_sensitive_word FOREIGN KEY (sensitive_word_id) REFERENCES sw.sensitive_words(sensitive_word_id) ON DELETE SET NULL,
+    CONSTRAINT CK_sw_audit_action_type CHECK (action_type IN (N'INSERT', N'UPDATE', N'DEACTIVATE', N'DELETE'))
 )
         ]]></sql>
     </changeSet>
 
-    <changeSet id="010-create-sensitive-word-audit-log-index" author="codex">
+    <changeSet id="010-create-sensitive-word-audit-log-index" author="Mamphiwa Moja">
         <preConditions onFail="MARK_RAN">
             <not>
                 <indexExists schemaName="sw" indexName="IX_sw_audit_sensitive_word_changed_at"/>
