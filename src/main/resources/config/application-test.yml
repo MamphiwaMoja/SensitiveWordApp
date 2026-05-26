@@ -19,7 +19,7 @@ spring:
 
 sensitive-words:
   cache:
-    active-words:
+    words:
       scheduled-refresh-enabled: false
   security:
     basic:

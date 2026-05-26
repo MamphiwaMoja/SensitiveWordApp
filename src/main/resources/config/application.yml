@@ -101,7 +101,7 @@ resilience4j:
         base-config: default
       sensitiveWordService:
         base-config: default
-      activeSensitiveWordCache:
+      sensitiveWordCache:
         base-config: default
 
 sensitive-words:
@@ -113,7 +113,7 @@ sensitive-words:
     max-attempts: 3
     backoff-ms: 150
   cache:
-    active-words:
+    words:
       scheduled-refresh-enabled: true
       refresh-interval-ms: 300000
   security:

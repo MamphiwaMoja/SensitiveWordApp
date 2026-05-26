@@ -11,8 +11,7 @@ ORDER BY TABLE_NAME;
 GO
 
 SELECT
-    COUNT(*) AS total_sensitive_words,
-    SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active_sensitive_words
+    COUNT(*) AS total_sensitive_words
 FROM sw.sensitive_words;
 GO
 
@@ -20,8 +19,7 @@ SELECT TOP (20)
     sensitive_word_id,
     word,
     normalized_word,
-    severity_level,
-    is_active
+    severity_level
 FROM sw.sensitive_words
 ORDER BY severity_level DESC, word ASC;
 GO

@@ -14,81 +14,81 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class ActiveSensitiveWordCacheTest {
+class SensitiveWordCacheTest {
 
     private final SensitiveWordRepository repository = mock(SensitiveWordRepository.class);
     private final ApplicationProperties properties = new ApplicationProperties();
-    private final ActiveSensitiveWordCache cache = new ActiveSensitiveWordCache(repository, properties);
+    private final SensitiveWordCache cache = new SensitiveWordCache(repository, properties);
 
     @Test
-    void getActiveWords_shouldLoadFromDatabaseOnceAndReuseSnapshot() {
-        when(repository.findActiveWords()).thenReturn(List.of(word(1L, "scam", 5)));
+    void getWords_shouldLoadFromDatabaseOnceAndReuseSnapshot() {
+        when(repository.findWordsForSanitization()).thenReturn(List.of(word(1L, "scam", 5)));
 
-        List<ActiveSensitiveWord> firstRead = cache.getActiveWords();
-        List<ActiveSensitiveWord> secondRead = cache.getActiveWords();
+        List<CachedSensitiveWord> firstRead = cache.getWords();
+        List<CachedSensitiveWord> secondRead = cache.getWords();
 
-        assertThat(firstRead).containsExactly(new ActiveSensitiveWord(1L, "scam", 5));
+        assertThat(firstRead).containsExactly(new CachedSensitiveWord(1L, "scam", 5));
         assertThat(secondRead).isSameAs(firstRead);
-        verify(repository, times(1)).findActiveWords();
+        verify(repository, times(1)).findWordsForSanitization();
     }
 
     @Test
     void invalidate_shouldForceNextReadToReload() {
-        when(repository.findActiveWords())
+        when(repository.findWordsForSanitization())
                 .thenReturn(List.of(word(1L, "scam", 5)))
                 .thenReturn(List.of(word(2L, "blocked", 4)));
 
-        cache.getActiveWords();
+        cache.getWords();
         cache.invalidate();
-        List<ActiveSensitiveWord> reloaded = cache.getActiveWords();
+        List<CachedSensitiveWord> reloaded = cache.getWords();
 
-        assertThat(reloaded).containsExactly(new ActiveSensitiveWord(2L, "blocked", 4));
-        verify(repository, times(2)).findActiveWords();
+        assertThat(reloaded).containsExactly(new CachedSensitiveWord(2L, "blocked", 4));
+        verify(repository, times(2)).findWordsForSanitization();
     }
 
     @Test
     void refresh_shouldKeepExistingSnapshot_whenReloadFailsAfterInitialLoad() {
-        when(repository.findActiveWords())
+        when(repository.findWordsForSanitization())
                 .thenReturn(List.of(word(1L, "scam", 5)))
                 .thenThrow(new IllegalStateException("database unavailable"));
 
-        List<ActiveSensitiveWord> initialSnapshot = cache.getActiveWords();
-        List<ActiveSensitiveWord> fallbackSnapshot = cache.refresh();
+        List<CachedSensitiveWord> initialSnapshot = cache.getWords();
+        List<CachedSensitiveWord> fallbackSnapshot = cache.refresh();
 
         assertThat(fallbackSnapshot).isSameAs(initialSnapshot);
-        assertThat(fallbackSnapshot).containsExactly(new ActiveSensitiveWord(1L, "scam", 5));
+        assertThat(fallbackSnapshot).containsExactly(new CachedSensitiveWord(1L, "scam", 5));
     }
 
     @Test
-    void getActiveWords_shouldKeepPreviousSnapshot_whenReloadFailsAfterInvalidation() {
-        when(repository.findActiveWords())
+    void getWords_shouldKeepPreviousSnapshot_whenReloadFailsAfterInvalidation() {
+        when(repository.findWordsForSanitization())
                 .thenReturn(List.of(word(1L, "scam", 5)))
                 .thenThrow(new IllegalStateException("database unavailable"));
 
-        List<ActiveSensitiveWord> initialSnapshot = cache.getActiveWords();
+        List<CachedSensitiveWord> initialSnapshot = cache.getWords();
         cache.invalidate();
-        List<ActiveSensitiveWord> fallbackSnapshot = cache.getActiveWords();
+        List<CachedSensitiveWord> fallbackSnapshot = cache.getWords();
 
         assertThat(fallbackSnapshot).isSameAs(initialSnapshot);
-        assertThat(fallbackSnapshot).containsExactly(new ActiveSensitiveWord(1L, "scam", 5));
+        assertThat(fallbackSnapshot).containsExactly(new CachedSensitiveWord(1L, "scam", 5));
     }
 
     @Test
     void refresh_shouldPropagateException_whenInitialLoadFails() {
-        when(repository.findActiveWords()).thenThrow(new IllegalStateException("database unavailable"));
+        when(repository.findWordsForSanitization()).thenThrow(new IllegalStateException("database unavailable"));
 
-        assertThatThrownBy(cache::getActiveWords)
+        assertThatThrownBy(cache::getWords)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("database unavailable");
     }
 
     @Test
     void scheduledRefresh_shouldDoNothing_whenDisabled() {
-        properties.getCache().getActiveWords().setScheduledRefreshEnabled(false);
+        properties.getCache().getWords().setScheduledRefreshEnabled(false);
 
         cache.scheduledRefresh();
 
-        verify(repository, times(0)).findActiveWords();
+        verify(repository, times(0)).findWordsForSanitization();
     }
 
     private SensitiveWord word(Long id, String value, Integer severityLevel) {
@@ -96,7 +96,6 @@ class ActiveSensitiveWordCacheTest {
         word.setId(id);
         word.setWord(value);
         word.setSeverityLevel(severityLevel);
-        word.setActive(true);
         return word;
     }
 }

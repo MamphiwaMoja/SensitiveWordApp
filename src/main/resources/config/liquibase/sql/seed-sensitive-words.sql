@@ -239,7 +239,6 @@ VALUES
 
 UPDATE sw.sensitive_words
 SET severity_level = 1,
-    is_active = 1,
     updated_at = SYSUTCDATETIME(),
     updated_by = N'system'
 WHERE normalized_word IN (
@@ -250,12 +249,10 @@ WHERE normalized_word IN (
 INSERT INTO sw.sensitive_words (
     word,
     severity_level,
-    is_active,
     created_by
 )
 SELECT
     source.word,
-    1,
     1,
     N'system'
 FROM @sql_keywords source

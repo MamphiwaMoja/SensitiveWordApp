@@ -9,4 +9,5 @@
     <include file="config/liquibase/changelog/003-seed-data.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/004-remove-sensitive-word-categories.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/005-enable-hard-delete-sensitive-words.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/006-remove-sensitive-word-active-column.xml" relativeToChangelogFile="false"/>
 </databaseChangeLog>

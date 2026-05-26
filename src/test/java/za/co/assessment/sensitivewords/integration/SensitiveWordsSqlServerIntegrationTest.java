@@ -93,7 +93,7 @@ class SensitiveWordsSqlServerIntegrationTest {
         );
         assertThat(computedColumnCount).isEqualTo(1);
 
-        Integer activeWordIndexCount = jdbcTemplate.queryForObject(
+        Integer uniqueWordIndexCount = jdbcTemplate.queryForObject(
                 """
                         SELECT COUNT(*)
                         FROM sys.indexes i
@@ -101,17 +101,18 @@ class SensitiveWordsSqlServerIntegrationTest {
                         JOIN sys.schemas s ON t.schema_id = s.schema_id
                         WHERE s.name = 'sw'
                           AND t.name = 'sensitive_words'
-                          AND i.name = 'UX_sw_words_active_word'
-                          AND i.has_filter = 1
+                          AND i.name = 'UX_sw_words_normalized_word'
+                          AND i.is_unique = 1
+                          AND i.has_filter = 0
                         """,
                 Integer.class
         );
-        assertThat(activeWordIndexCount).isEqualTo(1);
+        assertThat(uniqueWordIndexCount).isEqualTo(1);
     }
 
     @Test
     void computedNormalizedWord_shouldBeGeneratedBySqlServer() {
-        SensitiveWord saved = sensitiveWordRepository.saveAndFlush(word("  MixedCaseTerm  ", true));
+        SensitiveWord saved = sensitiveWordRepository.saveAndFlush(word("  MixedCaseTerm  "));
         entityManager.clear();
 
         SensitiveWord reloaded = sensitiveWordRepository.findById(saved.getId()).orElseThrow();
@@ -121,19 +122,11 @@ class SensitiveWordsSqlServerIntegrationTest {
     }
 
     @Test
-    void uniqueActiveWordIndex_shouldRejectDuplicateActiveNormalizedWords() {
-        sensitiveWordRepository.saveAndFlush(word("DuplicateTerm", true));
+    void uniqueWordIndex_shouldRejectDuplicateNormalizedWords() {
+        sensitiveWordRepository.saveAndFlush(word("DuplicateTerm"));
 
-        assertThatThrownBy(() -> sensitiveWordRepository.saveAndFlush(word("  duplicateterm  ", true)))
+        assertThatThrownBy(() -> sensitiveWordRepository.saveAndFlush(word("  duplicateterm  ")))
                 .isInstanceOf(DataIntegrityViolationException.class);
-    }
-
-    @Test
-    void uniqueActiveWordIndex_shouldAllowDuplicateInactiveWords() {
-        sensitiveWordRepository.saveAndFlush(word("InactiveDuplicate", true));
-        SensitiveWord inactiveDuplicate = sensitiveWordRepository.saveAndFlush(word(" inactiveDuplicate ", false));
-
-        assertThat(inactiveDuplicate.getId()).isNotNull();
     }
 
     @Test
@@ -161,12 +154,12 @@ class SensitiveWordsSqlServerIntegrationTest {
     }
 
     @Test
-    void sanitize_shouldSeeNewActiveWordAfterServiceInvalidatesCache() {
+    void sanitize_shouldSeeNewWordAfterServiceInvalidatesCache() {
         sanitizationService.sanitize(
-                new SanitizeTextRequest("This text primes the active-word cache", "integration-test", false)
+                new SanitizeTextRequest("This text primes the word cache", "integration-test", false)
         );
 
-        sensitiveWordService.create(new CreateSensitiveWordRequest("cache-visible-term", 3, true));
+        sensitiveWordService.create(new CreateSensitiveWordRequest("cache-visible-term", 3));
 
         SanitizeTextResponse response = sanitizationService.sanitize(
                 new SanitizeTextRequest("Payload cache-visible-term", "integration-test", false)
@@ -180,7 +173,7 @@ class SensitiveWordsSqlServerIntegrationTest {
 
     @Test
     void delete_shouldPhysicallyRemoveWordAndRetainAuditSnapshot() {
-        SensitiveWordResponse created = sensitiveWordService.create(new CreateSensitiveWordRequest("hard-delete-term", 2, true));
+        SensitiveWordResponse created = sensitiveWordService.create(new CreateSensitiveWordRequest("hard-delete-term", 2));
 
         sensitiveWordService.delete(created.id());
 
@@ -219,11 +212,10 @@ class SensitiveWordsSqlServerIntegrationTest {
         );
     }
 
-    private SensitiveWord word(String value, boolean active) {
+    private SensitiveWord word(String value) {
         SensitiveWord word = new SensitiveWord();
         word.setWord(value);
         word.setSeverityLevel(1);
-        word.setActive(active);
         return word;
     }
 }

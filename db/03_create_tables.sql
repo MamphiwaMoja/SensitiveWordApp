@@ -30,7 +30,6 @@ CREATE TABLE sw.sensitive_words (
     word NVARCHAR(510) NOT NULL,
     normalized_word AS LOWER(LTRIM(RTRIM(word))) PERSISTED,
     severity_level TINYINT NOT NULL CONSTRAINT DF_sw_words_severity DEFAULT (1),
-    is_active BIT NOT NULL CONSTRAINT DF_sw_words_is_active DEFAULT (1),
     effective_from DATETIME2(3) NOT NULL CONSTRAINT DF_sw_words_effective_from DEFAULT (SYSUTCDATETIME()),
     created_at DATETIME2(3) NOT NULL CONSTRAINT DF_sw_words_created_at DEFAULT (SYSUTCDATETIME()),
     updated_at DATETIME2(3) NULL,
@@ -41,13 +40,12 @@ CREATE TABLE sw.sensitive_words (
 );
 GO
 
-CREATE UNIQUE INDEX UX_sw_words_active_word
-    ON sw.sensitive_words(normalized_word)
-    WHERE is_active = 1;
+CREATE UNIQUE INDEX UX_sw_words_normalized_word
+    ON sw.sensitive_words(normalized_word);
 GO
 
-CREATE INDEX IX_sw_words_active
-    ON sw.sensitive_words(is_active, severity_level);
+CREATE INDEX IX_sw_words_severity
+    ON sw.sensitive_words(severity_level);
 GO
 
 CREATE TABLE sw.sanitization_requests (
@@ -78,7 +76,7 @@ CREATE TABLE sw.sensitive_word_audit_log (
     CONSTRAINT FK_sw_audit_sensitive_word
         FOREIGN KEY (sensitive_word_id) REFERENCES sw.sensitive_words(sensitive_word_id) ON DELETE SET NULL,
     CONSTRAINT CK_sw_audit_action_type
-        CHECK (action_type IN (N'INSERT', N'UPDATE', N'DEACTIVATE', N'DELETE'))
+        CHECK (action_type IN (N'INSERT', N'UPDATE', N'DELETE'))
 );
 GO
 

@@ -13,7 +13,7 @@ import za.co.assessment.sensitivewords.mapper.SensitiveWordMapper;
 import za.co.assessment.sensitivewords.repository.SensitiveWordRepository;
 import za.co.assessment.sensitivewords.service.impl.SensitiveWordServiceImpl;
 import za.co.assessment.sensitivewords.service.audit.SensitiveWordAuditService;
-import za.co.assessment.sensitivewords.service.cache.ActiveSensitiveWordCache;
+import za.co.assessment.sensitivewords.service.cache.SensitiveWordCache;
 import za.co.assessment.sensitivewords.web.rest.errors.DuplicateSensitiveWordException;
 
 import java.time.LocalDateTime;
@@ -36,7 +36,7 @@ class SensitiveWordServiceTest {
     private SensitiveWordAuditService auditService;
 
     @Mock
-    private ActiveSensitiveWordCache activeSensitiveWordCache;
+    private SensitiveWordCache sensitiveWordCache;
 
     @Mock
     private SensitiveWordMapper mapper;
@@ -45,13 +45,12 @@ class SensitiveWordServiceTest {
     private SensitiveWordServiceImpl sensitiveWordService;
 
     @Test
-    void create_shouldRejectDuplicateActiveWord() {
-        when(sensitiveWordRepository.existsActiveWord("duplicate")).thenReturn(true);
+    void create_shouldRejectDuplicateWord() {
+        when(sensitiveWordRepository.existsByNormalizedWord("duplicate")).thenReturn(true);
 
         CreateSensitiveWordRequest request = new CreateSensitiveWordRequest(
                 "Duplicate",
-                1,
-                true
+                1
         );
 
         assertThatThrownBy(() -> sensitiveWordService.create(request))
@@ -60,34 +59,32 @@ class SensitiveWordServiceTest {
 
     @Test
     void create_shouldSaveWord_whenRequestIsValid() {
-        when(sensitiveWordRepository.existsActiveWord("local-term")).thenReturn(false);
+        when(sensitiveWordRepository.existsByNormalizedWord("local-term")).thenReturn(false);
         when(sensitiveWordRepository.save(any(SensitiveWord.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CreateSensitiveWordRequest request = new CreateSensitiveWordRequest(
                 "local-term",
-                2,
-                true
+                2
         );
 
         sensitiveWordService.create(request);
 
-        verify(sensitiveWordRepository).existsActiveWord("local-term");
+        verify(sensitiveWordRepository).existsByNormalizedWord("local-term");
         verify(sensitiveWordRepository).save(any(SensitiveWord.class));
         verify(auditService).recordInsert(any(SensitiveWord.class));
-        verify(activeSensitiveWordCache).invalidate();
+        verify(sensitiveWordCache).invalidate();
         verify(mapper).toResponse(any(SensitiveWord.class));
     }
 
     @Test
-    void update_shouldRejectDuplicateActiveWord() {
-        SensitiveWord existing = existingWord(10L, "existing", true);
+    void update_shouldRejectDuplicateWord() {
+        SensitiveWord existing = existingWord(10L, "existing");
         when(sensitiveWordRepository.findById(10L)).thenReturn(Optional.of(existing));
-        when(sensitiveWordRepository.existsActiveWordExcludingId("duplicate", 10L)).thenReturn(true);
+        when(sensitiveWordRepository.existsByNormalizedWordExcludingId("duplicate", 10L)).thenReturn(true);
 
         UpdateSensitiveWordRequest request = new UpdateSensitiveWordRequest(
                 "duplicate",
-                null,
-                true
+                null
         );
 
         assertThatThrownBy(() -> sensitiveWordService.update(10L, request))
@@ -96,14 +93,13 @@ class SensitiveWordServiceTest {
 
     @Test
     void update_shouldApplyPatchValuesAndAudit() {
-        SensitiveWord existing = existingWord(11L, "scam", true);
+        SensitiveWord existing = existingWord(11L, "scam");
         when(sensitiveWordRepository.findById(11L)).thenReturn(Optional.of(existing));
         when(sensitiveWordRepository.save(any(SensitiveWord.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         UpdateSensitiveWordRequest request = new UpdateSensitiveWordRequest(
                 null,
-                5,
-                false
+                5
         );
 
         sensitiveWordService.update(11L, request);
@@ -112,14 +108,13 @@ class SensitiveWordServiceTest {
         verify(sensitiveWordRepository).save(captor.capture());
         SensitiveWord saved = captor.getValue();
         assertThat(saved.getSeverityLevel()).isEqualTo(5);
-        assertThat(saved.getActive()).isFalse();
         verify(auditService).recordUpdate(any(SensitiveWord.class), any());
-        verify(activeSensitiveWordCache).invalidate();
+        verify(sensitiveWordCache).invalidate();
     }
 
     @Test
     void delete_shouldHardDeleteWord() {
-        SensitiveWord existing = existingWord(12L, "term", true);
+        SensitiveWord existing = existingWord(12L, "term");
         when(sensitiveWordRepository.findById(12L)).thenReturn(Optional.of(existing));
 
         sensitiveWordService.delete(12L);
@@ -127,15 +122,14 @@ class SensitiveWordServiceTest {
         verify(auditService).recordDelete(existing, null);
         verify(sensitiveWordRepository).delete(existing);
         verify(sensitiveWordRepository, never()).save(existing);
-        verify(activeSensitiveWordCache).invalidate();
+        verify(sensitiveWordCache).invalidate();
     }
 
-    private SensitiveWord existingWord(Long id, String value, boolean active) {
+    private SensitiveWord existingWord(Long id, String value) {
         SensitiveWord sensitiveWord = new SensitiveWord();
         sensitiveWord.setId(id);
         sensitiveWord.setWord(value);
         sensitiveWord.setSeverityLevel(2);
-        sensitiveWord.setActive(active);
         sensitiveWord.setCreatedAt(LocalDateTime.now());
         return sensitiveWord;
     }

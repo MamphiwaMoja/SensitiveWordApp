@@ -90,13 +90,13 @@ public class ApplicationProperties {
 
     public static class Cache {
 
-        private final ActiveWords activeWords = new ActiveWords();
+        private final Words words = new Words();
 
-        public ActiveWords getActiveWords() {
-            return activeWords;
+        public Words getWords() {
+            return words;
         }
 
-        public static class ActiveWords {
+        public static class Words {
 
             private boolean scheduledRefreshEnabled = true;
 

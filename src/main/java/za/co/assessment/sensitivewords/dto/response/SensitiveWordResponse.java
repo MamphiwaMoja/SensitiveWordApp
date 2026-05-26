@@ -13,8 +13,6 @@ public record SensitiveWordResponse(
         String normalizedWord,
         @Schema(description = "Severity ranking stored with the sensitive word.", minimum = "1", maximum = "255", example = "1")
         Integer severityLevel,
-        @Schema(description = "Whether the word participates in sanitization.", example = "true")
-        Boolean active,
         @Schema(description = "UTC timestamp from which the word is effective.", example = "2026-05-26T09:14:33.787")
         LocalDateTime effectiveFrom,
         @Schema(description = "UTC timestamp when the record was created.", example = "2026-05-26T09:14:33.787")

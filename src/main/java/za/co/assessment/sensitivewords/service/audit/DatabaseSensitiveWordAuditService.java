@@ -37,7 +37,6 @@ public class DatabaseSensitiveWordAuditService implements SensitiveWordAuditServ
                 "\"id\":" + word.getId() +
                 ",\"word\":\"" + escape(word.getWord()) + "\"" +
                 ",\"severityLevel\":" + word.getSeverityLevel() +
-                ",\"active\":" + word.getActive() +
                 "}";
     }
 

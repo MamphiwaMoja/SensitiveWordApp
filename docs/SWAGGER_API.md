@@ -18,7 +18,7 @@ Local Swagger UI is configured to load the source contract from `src/main/resour
 
 `POST /api/v1/sanitize`
 
-This is the externally consumed business endpoint from the assessment scenario. It accepts text from a client system, checks it against active database-backed sensitive words, and returns the amended text.
+This is the externally consumed business endpoint from the assessment scenario. It accepts text from a client system, checks it against database-backed sensitive words, and returns the amended text.
 
 Example request:
 
@@ -73,8 +73,7 @@ Create example:
 ```json
 {
   "word": "REVIEW_TERM",
-  "severityLevel": 2,
-  "active": true
+  "severityLevel": 2
 }
 ```
 
@@ -82,8 +81,7 @@ Patch example:
 
 ```json
 {
-  "severityLevel": 3,
-  "active": true
+  "severityLevel": 3
 }
 ```
 

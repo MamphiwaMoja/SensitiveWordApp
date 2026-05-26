@@ -16,7 +16,7 @@ Spring Boot microservice for managing sensitive-word rules and sanitizing incomi
 ## What the service does
 
 1. Manages sensitive words through a REST API
-2. Replaces active database words in incoming text with `***`
+2. Replaces configured database words in incoming text with `***`
 3. Tracks each matched word and replacement count in the sanitize response
 4. Tracks CRUD audit events and optional sanitization request logs internally
 
@@ -238,7 +238,7 @@ curl -X POST http://localhost:8080/api/v1/sanitize \
 ```bash
 curl -X POST http://localhost:8080/api/v1/sensitive-words \
   -H "Content-Type: application/json" \
-  -d '{"word":"local-demo-term","severityLevel":2,"active":true}'
+  -d '{"word":"local-demo-term","severityLevel":2}'
 ```
 
 ### Update a sensitive word
@@ -260,8 +260,8 @@ curl -X DELETE http://localhost:8080/api/v1/sensitive-words/1
 - Layered structure: controller -> service -> repository -> MSSQL
 - DTOs are used for request and response contracts
 - DELETE physically removes the sensitive-word row; audit snapshots are retained separately
-- Active sensitive words are cached in memory and invalidated after CRUD changes
-- Active-word lookup orders longer entries first so overlapping phrases replace predictably
+- Sensitive words are cached in memory and invalidated after CRUD changes
+- Cached-word lookup orders longer entries first so overlapping phrases replace predictably
 - Sanitization uses literal, case-insensitive word replacement with the constant `***`
 - Request payload persistence is disabled by default to reduce risk around sensitive content
 - Hibernate DDL generation is disabled; schema migrations live in Liquibase, while the SQL scripts support local least-privilege and Docker bootstrap paths
@@ -308,9 +308,9 @@ curl -X DELETE http://localhost:8080/api/v1/sensitive-words/1
 
 Current implementation:
 
-1. Cache active sensitive words in memory and invalidate on CRUD changes
-2. Keep filtered indexes on active words and lookup columns
-3. Prefer longest-word ordering when active words overlap
+1. Cache sensitive words in memory and invalidate on CRUD changes
+2. Keep unique and lookup indexes on normalized words
+3. Prefer longest-word ordering when words overlap
 4. Avoid persisting sanitization request bodies unless explicitly needed
 
 Remaining production-scale improvements:

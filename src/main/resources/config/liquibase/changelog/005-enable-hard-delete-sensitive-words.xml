@@ -36,7 +36,7 @@ BEGIN
 
     ALTER TABLE sw.sensitive_word_audit_log
         WITH CHECK ADD CONSTRAINT CK_sw_audit_action_type
-        CHECK (action_type IN (N'INSERT', N'UPDATE', N'DEACTIVATE', N'DELETE'));
+        CHECK (action_type IN (N'INSERT', N'UPDATE', N'DELETE'));
 END;
         ]]></sql>
     </changeSet>

@@ -139,9 +139,8 @@ public class SensitiveWordResource {
         SensitiveWordResponse response = sensitiveWordService.findById(id);
 
         LOGGER.info(
-                "Sensitive-word lookup completed for id={} with active={}. Duration: {} ms",
+                "Sensitive-word lookup completed for id={}. Duration: {} ms",
                 id,
-                response.active(),
                 System.currentTimeMillis() - startTime
         );
 
@@ -151,7 +150,7 @@ public class SensitiveWordResource {
     @PostMapping("/sensitive-words")
     @Operation(
             summary = "Create a sensitive word",
-            description = "Creates a new sensitive word or phrase. Active words must be unique after trimming and lowercasing."
+            description = "Creates a new sensitive word or phrase. Words must be unique after trimming and lowercasing."
     )
     @ApiResponses({
             @ApiResponse(
@@ -170,7 +169,7 @@ public class SensitiveWordResource {
             ),
             @ApiResponse(
                     responseCode = "409",
-                    description = "Duplicate active word",
+                    description = "Duplicate word",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
@@ -188,9 +187,8 @@ public class SensitiveWordResource {
         long startTime = System.currentTimeMillis();
         // Log metadata only; the actual word can be sensitive.
         LOGGER.info(
-                "REST request to create sensitive word with wordLength={}, active={}",
-                request.word() == null ? 0 : request.word().length(),
-                request.active()
+                "REST request to create sensitive word with wordLength={}",
+                request.word() == null ? 0 : request.word().length()
         );
 
         SensitiveWordResponse created = sensitiveWordService.create(request);
@@ -200,9 +198,8 @@ public class SensitiveWordResource {
                 .toUri();
 
         LOGGER.info(
-                "Sensitive-word create completed for id={}, active={}. Duration: {} ms",
+                "Sensitive-word create completed for id={}. Duration: {} ms",
                 created.id(),
-                created.active(),
                 System.currentTimeMillis() - startTime
         );
 
@@ -233,7 +230,7 @@ public class SensitiveWordResource {
             ),
             @ApiResponse(
                     responseCode = "409",
-                    description = "Duplicate active word",
+                    description = "Duplicate word",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
@@ -255,18 +252,16 @@ public class SensitiveWordResource {
     ) {
         long startTime = System.currentTimeMillis();
         LOGGER.info(
-                "REST request to update sensitive word with id={}, wordProvided={}, active={}",
+                "REST request to update sensitive word with id={}, wordProvided={}",
                 id,
-                request.word() != null,
-                request.active()
+                request.word() != null
         );
 
         SensitiveWordResponse response = sensitiveWordService.update(id, request);
 
         LOGGER.info(
-                "Sensitive-word update completed for id={}, active={}. Duration: {} ms",
+                "Sensitive-word update completed for id={}. Duration: {} ms",
                 response.id(),
-                response.active(),
                 System.currentTimeMillis() - startTime
         );
 
