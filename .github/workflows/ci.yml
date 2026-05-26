@@ -84,7 +84,7 @@ jobs:
                 line_total = line_missed + line_covered
                 instruction_pct = instruction_total == 0 ? 0 : instruction_covered * 100 / instruction_total
                 line_pct = line_total == 0 ? 0 : line_covered * 100 / line_total
-                printf "%.2f %.2f", instruction_pct, line_pct
+                printf "%.2f %.2f\n", instruction_pct, line_pct
               }
             ' "${csv}"
           )
