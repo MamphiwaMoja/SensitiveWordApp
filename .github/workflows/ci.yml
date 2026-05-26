@@ -31,10 +31,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -47,14 +47,13 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # Unit tests only run after the project compiles cleanly.
     needs: compile
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -105,7 +104,7 @@ jobs:
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Upload JaCoCo report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: jacoco-report
           path: target/site/jacoco
@@ -115,14 +114,13 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 35
-    # Maven verify runs the SQL Server Testcontainers integration suite after unit tests pass.
     needs: unit-tests
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -139,10 +137,10 @@ jobs:
     needs: compile
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -152,7 +150,6 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: java
-          # Manual build mode lets Maven compile the project exactly as the app expects.
           build-mode: manual
           queries: security-extended,security-and-quality
 
@@ -172,10 +169,10 @@ jobs:
       NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -184,7 +181,6 @@ jobs:
       - name: Cache OWASP Dependency-Check data
         uses: actions/cache@v4
         with:
-          # Cache NVD data to reduce repeated downloads and rate-limit exposure.
           path: ~/.dependency-check
           key: dependency-check-v3-${{ runner.os }}-${{ hashFiles('pom.xml') }}
           restore-keys: |
@@ -236,7 +232,7 @@ jobs:
       - name: Upload dependency scan report
         # Upload the report even when the scan step warns or finds vulnerable dependencies.
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dependency-check-report
           path: target/dependency-check-report.*
@@ -253,7 +249,7 @@ jobs:
       - dependency-vulnerability-scan
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
