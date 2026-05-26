@@ -11,7 +11,7 @@ import za.co.assessment.sensitivewords.domain.SensitiveWord;
 import za.co.assessment.sensitivewords.dto.request.SanitizeTextRequest;
 import za.co.assessment.sensitivewords.dto.response.SanitizeTextResponse;
 import za.co.assessment.sensitivewords.repository.SanitizationRequestLogRepository;
-import za.co.assessment.sensitivewords.service.Impl.SanitizationServiceImpl;
+import za.co.assessment.sensitivewords.service.impl.SanitizationServiceImpl;
 import za.co.assessment.sensitivewords.service.cache.ActiveSensitiveWord;
 import za.co.assessment.sensitivewords.service.cache.ActiveSensitiveWordCache;
 

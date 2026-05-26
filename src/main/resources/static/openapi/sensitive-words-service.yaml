@@ -20,7 +20,7 @@ paths:
         - Sensitive Words
       operationId: listSensitiveWords
       summary: List sensitive words
-      description: Returns a paginated list of sensitive-word records, including active and inactive entries.
+      description: Returns a paginated list of sensitive-word records that have not been deleted.
       parameters:
         - name: page
           in: query
@@ -223,13 +223,14 @@ paths:
     delete:
       tags:
         - Sensitive Words
-      operationId: deactivateSensitiveWord
-      summary: Deactivate a sensitive word
+      operationId: deleteSensitiveWord
+      summary: Delete a sensitive word
+      description: Permanently removes the sensitive-word record from the database.
       parameters:
         - $ref: '#/components/parameters/SensitiveWordId'
       responses:
         '204':
-          description: Sensitive word deactivated
+          description: Sensitive word deleted
           headers:
             X-Trace-Id:
               description: Trace id for log correlation.

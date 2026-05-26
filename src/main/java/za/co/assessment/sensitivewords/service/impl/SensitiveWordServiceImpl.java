@@ -1,4 +1,4 @@
-package za.co.assessment.sensitivewords.service.Impl;
+package za.co.assessment.sensitivewords.service.impl;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.data.domain.Page;
@@ -174,16 +174,12 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
     @Override
     @CircuitBreaker(name = "sensitiveWordService")
     @Transactional(timeoutString = "${sensitive-words.timeouts.write-transaction-seconds:10}")
-    public void deactivate(Long id) {
+    public void delete(Long id) {
         SensitiveWord existing = getRequiredSensitiveWord(id);
         String oldSnapshot = auditService.snapshot(existing);
 
-        // Deactivation is a soft delete so historical audit records and old references remain intact.
-        existing.setActive(false);
-        existing.setUpdatedBy(Constants.SYSTEM_ACCOUNT);
-
-        SensitiveWord saved = sensitiveWordRepository.save(existing);
-        auditService.recordDeactivate(saved, oldSnapshot);
+        auditService.recordDelete(existing, oldSnapshot);
+        sensitiveWordRepository.delete(existing);
         activeSensitiveWordCache.invalidate();
     }
 

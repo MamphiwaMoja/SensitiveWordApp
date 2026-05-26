@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="015-enable-sensitive-word-hard-delete" author="Mamphiwa Moja">
+        <sql><![CDATA[
+IF OBJECT_ID(N'sw.sensitive_word_audit_log', N'U') IS NOT NULL
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM sys.check_constraints
+        WHERE name = N'CK_sw_audit_action_type'
+          AND parent_object_id = OBJECT_ID(N'sw.sensitive_word_audit_log')
+    )
+    BEGIN
+        ALTER TABLE sw.sensitive_word_audit_log DROP CONSTRAINT CK_sw_audit_action_type;
+    END;
+
+    IF EXISTS (
+        SELECT 1
+        FROM sys.foreign_keys
+        WHERE name = N'FK_sw_audit_sensitive_word'
+          AND parent_object_id = OBJECT_ID(N'sw.sensitive_word_audit_log')
+    )
+    BEGIN
+        ALTER TABLE sw.sensitive_word_audit_log DROP CONSTRAINT FK_sw_audit_sensitive_word;
+    END;
+
+    ALTER TABLE sw.sensitive_word_audit_log
+        WITH CHECK ADD CONSTRAINT FK_sw_audit_sensitive_word
+        FOREIGN KEY (sensitive_word_id)
+        REFERENCES sw.sensitive_words(sensitive_word_id)
+        ON DELETE SET NULL;
+
+    ALTER TABLE sw.sensitive_word_audit_log
+        WITH CHECK ADD CONSTRAINT CK_sw_audit_action_type
+        CHECK (action_type IN (N'INSERT', N'UPDATE', N'DEACTIVATE', N'DELETE'));
+END;
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

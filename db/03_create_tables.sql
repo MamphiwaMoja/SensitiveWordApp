@@ -76,9 +76,9 @@ CREATE TABLE sw.sensitive_word_audit_log (
     changed_by NVARCHAR(200) NOT NULL CONSTRAINT DF_sw_audit_changed_by DEFAULT (N'system'),
     changed_at DATETIME2(3) NOT NULL CONSTRAINT DF_sw_audit_changed_at DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT FK_sw_audit_sensitive_word
-        FOREIGN KEY (sensitive_word_id) REFERENCES sw.sensitive_words(sensitive_word_id),
+        FOREIGN KEY (sensitive_word_id) REFERENCES sw.sensitive_words(sensitive_word_id) ON DELETE SET NULL,
     CONSTRAINT CK_sw_audit_action_type
-        CHECK (action_type IN (N'INSERT', N'UPDATE', N'DEACTIVATE'))
+        CHECK (action_type IN (N'INSERT', N'UPDATE', N'DEACTIVATE', N'DELETE'))
 );
 GO
 

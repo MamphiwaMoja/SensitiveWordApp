@@ -15,7 +15,13 @@
     <artifactId>sensitive-words-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>sensitive-words-service</name>
-    <description>Senior-level Spring Boot microservice for managing and applying sensitive-word sanitization rules.</description>
+    <description>Spring Boot service for managing and applying sensitive-word sanitization rules.</description>
+
+    <developers>
+        <developer>
+            <name>Mamphiwa Moja</name>
+        </developer>
+    </developers>
 
     <properties>
         <java.version>17</java.version>

@@ -16,6 +16,7 @@ import za.co.assessment.sensitivewords.domain.SensitiveWord;
 import za.co.assessment.sensitivewords.dto.request.CreateSensitiveWordRequest;
 import za.co.assessment.sensitivewords.dto.request.SanitizeTextRequest;
 import za.co.assessment.sensitivewords.dto.response.SanitizeTextResponse;
+import za.co.assessment.sensitivewords.dto.response.SensitiveWordResponse;
 import za.co.assessment.sensitivewords.repository.SensitiveWordRepository;
 import za.co.assessment.sensitivewords.service.SanitizationService;
 import za.co.assessment.sensitivewords.service.SensitiveWordService;
@@ -175,6 +176,36 @@ class SensitiveWordsSqlServerIntegrationTest {
         assertThat(response.matchedWords())
                 .extracting(match -> match.word().toLowerCase())
                 .contains("cache-visible-term");
+    }
+
+    @Test
+    void delete_shouldPhysicallyRemoveWordAndRetainAuditSnapshot() {
+        SensitiveWordResponse created = sensitiveWordService.create(new CreateSensitiveWordRequest("hard-delete-term", 2, true));
+
+        sensitiveWordService.delete(created.id());
+
+        Integer wordCount = jdbcTemplate.queryForObject(
+                """
+                        SELECT COUNT(*)
+                        FROM sw.sensitive_words
+                        WHERE sensitive_word_id = ?
+                        """,
+                Integer.class,
+                created.id()
+        );
+        assertThat(wordCount).isZero();
+
+        Integer deleteAuditCount = jdbcTemplate.queryForObject(
+                """
+                        SELECT COUNT(*)
+                        FROM sw.sensitive_word_audit_log
+                        WHERE action_type = 'DELETE'
+                          AND old_value LIKE '%hard-delete-term%'
+                          AND sensitive_word_id IS NULL
+                        """,
+                Integer.class
+        );
+        assertThat(deleteAuditCount).isEqualTo(1);
     }
 
     private List<String> tableNames() {

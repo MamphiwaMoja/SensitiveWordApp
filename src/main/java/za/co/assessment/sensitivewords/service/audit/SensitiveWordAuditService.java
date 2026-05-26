@@ -8,7 +8,7 @@ public interface SensitiveWordAuditService {
 
     void recordUpdate(SensitiveWord word, String oldSnapshot);
 
-    void recordDeactivate(SensitiveWord word, String oldSnapshot);
+    void recordDelete(SensitiveWord word, String oldSnapshot);
 
     String snapshot(SensitiveWord word);
 }

@@ -28,7 +28,7 @@ Spring Boot microservice for managing sensitive-word rules and sanitizing incomi
 | `GET` | `/api/v1/sensitive-words/{id}` | Get one sensitive-word rule |
 | `POST` | `/api/v1/sensitive-words` | Create a sensitive-word rule |
 | `PATCH` | `/api/v1/sensitive-words/{id}` | Partially update a sensitive-word rule |
-| `DELETE` | `/api/v1/sensitive-words/{id}` | Deactivate a sensitive-word rule |
+| `DELETE` | `/api/v1/sensitive-words/{id}` | Permanently delete a sensitive-word rule |
 | `POST` | `/api/v1/sanitize` | Sanitize input text |
 | `GET` | `/openapi/sensitive-words-service.yaml` | Checked-in OpenAPI contract |
 | `GET` | `/v3/api-docs.yaml` | Generated OpenAPI document |
@@ -232,7 +232,7 @@ curl -X PATCH http://localhost:8080/api/v1/sensitive-words/1 \
   -d '{"severityLevel":3}'
 ```
 
-### Deactivate a sensitive word
+### Delete a sensitive word
 
 ```bash
 curl -X DELETE http://localhost:8080/api/v1/sensitive-words/1
@@ -242,7 +242,7 @@ curl -X DELETE http://localhost:8080/api/v1/sensitive-words/1
 
 - Layered structure: controller -> service -> repository -> MSSQL
 - DTOs are used for request and response contracts
-- Soft delete is implemented as word deactivation
+- DELETE physically removes the sensitive-word row; audit snapshots are retained separately
 - Active sensitive words are cached in memory and invalidated after CRUD changes
 - Active-word lookup orders longer entries first so overlapping phrases replace predictably
 - Sanitization uses literal, case-insensitive word replacement with the constant `***`

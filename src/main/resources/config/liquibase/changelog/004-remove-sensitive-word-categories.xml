@@ -4,7 +4,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="013-remove-sensitive-word-categories" author="codex">
+    <changeSet id="013-remove-sensitive-word-categories" author="Mamphiwa Moja">
         <sql><![CDATA[
 IF COL_LENGTH(N'sw.sensitive_words', N'category_id') IS NOT NULL
 BEGIN
@@ -46,7 +46,7 @@ END;
         ]]></sql>
     </changeSet>
 
-    <changeSet id="014-reseed-sensitive-words-without-categories" author="codex">
+    <changeSet id="014-reseed-sensitive-words-without-categories" author="Mamphiwa Moja">
         <sqlFile
                 path="config/liquibase/sql/seed-sensitive-words.sql"
                 relativeToChangelogFile="false"

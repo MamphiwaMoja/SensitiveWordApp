@@ -11,7 +11,7 @@ import za.co.assessment.sensitivewords.dto.request.CreateSensitiveWordRequest;
 import za.co.assessment.sensitivewords.dto.request.UpdateSensitiveWordRequest;
 import za.co.assessment.sensitivewords.mapper.SensitiveWordMapper;
 import za.co.assessment.sensitivewords.repository.SensitiveWordRepository;
-import za.co.assessment.sensitivewords.service.Impl.SensitiveWordServiceImpl;
+import za.co.assessment.sensitivewords.service.impl.SensitiveWordServiceImpl;
 import za.co.assessment.sensitivewords.service.audit.SensitiveWordAuditService;
 import za.co.assessment.sensitivewords.service.cache.ActiveSensitiveWordCache;
 import za.co.assessment.sensitivewords.web.rest.errors.DuplicateSensitiveWordException;
@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -117,18 +118,15 @@ class SensitiveWordServiceTest {
     }
 
     @Test
-    void deactivate_shouldMarkWordInactive() {
+    void delete_shouldHardDeleteWord() {
         SensitiveWord existing = existingWord(12L, "term", true);
         when(sensitiveWordRepository.findById(12L)).thenReturn(Optional.of(existing));
-        when(sensitiveWordRepository.save(any(SensitiveWord.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        sensitiveWordService.deactivate(12L);
+        sensitiveWordService.delete(12L);
 
-        ArgumentCaptor<SensitiveWord> captor = ArgumentCaptor.forClass(SensitiveWord.class);
-        verify(sensitiveWordRepository).save(captor.capture());
-        SensitiveWord saved = captor.getValue();
-        assertThat(saved.getActive()).isFalse();
-        verify(auditService).recordDeactivate(any(SensitiveWord.class), any());
+        verify(auditService).recordDelete(existing, null);
+        verify(sensitiveWordRepository).delete(existing);
+        verify(sensitiveWordRepository, never()).save(existing);
         verify(activeSensitiveWordCache).invalidate();
     }
 

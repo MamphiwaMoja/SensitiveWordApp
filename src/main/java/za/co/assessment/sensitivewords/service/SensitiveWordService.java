@@ -16,5 +16,5 @@ public interface SensitiveWordService {
 
     SensitiveWordResponse update(Long id, UpdateSensitiveWordRequest request);
 
-    void deactivate(Long id);
+    void delete(Long id);
 }

@@ -4,7 +4,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="012-seed-sensitive-words" author="codex">
+    <changeSet id="012-seed-sensitive-words" author="Mamphiwa Moja">
         <validCheckSum>ANY</validCheckSum>
         <sqlFile
                 path="config/liquibase/sql/seed-sensitive-words.sql"
