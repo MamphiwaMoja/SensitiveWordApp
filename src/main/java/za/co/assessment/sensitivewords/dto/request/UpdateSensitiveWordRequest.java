@@ -7,19 +7,16 @@ import jakarta.validation.constraints.Size;
 
 @Schema(name = "UpdateSensitiveWordRequest", description = "Payload used to partially update a sensitive word.")
 public record UpdateSensitiveWordRequest(
-        @Schema(description = "Optional replacement category identifier.", example = "2")
-        Long categoryId,
-
-        @Schema(description = "New word to mask.", example = "restricted phrase")
+        @Schema(description = "Replacement exact word or phrase to mask. Leave omitted to keep the existing value.", example = "SELECT * FROM")
         @Size(max = 510, message = "word must not exceed 510 characters")
         String word,
 
-        @Schema(description = "New severity ranking.", example = "3")
+        @Schema(description = "New severity ranking. Leave omitted to keep the existing value.", minimum = "1", maximum = "255", example = "2")
         @Min(value = 1, message = "severityLevel must be between 1 and 255")
         @Max(value = 255, message = "severityLevel must be between 1 and 255")
         Integer severityLevel,
 
-        @Schema(description = "Updated activation flag.", example = "true")
+        @Schema(description = "Updated activation flag. Leave omitted to keep the existing value.", example = "true")
         Boolean active
 ) {
 }

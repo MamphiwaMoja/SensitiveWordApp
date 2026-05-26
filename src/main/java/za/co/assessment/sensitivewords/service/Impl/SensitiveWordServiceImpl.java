@@ -13,12 +13,10 @@ import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.assessment.sensitivewords.config.Constants;
 import za.co.assessment.sensitivewords.domain.SensitiveWord;
-import za.co.assessment.sensitivewords.domain.SensitiveWordCategory;
 import za.co.assessment.sensitivewords.dto.request.CreateSensitiveWordRequest;
 import za.co.assessment.sensitivewords.dto.request.UpdateSensitiveWordRequest;
 import za.co.assessment.sensitivewords.dto.response.SensitiveWordResponse;
 import za.co.assessment.sensitivewords.mapper.SensitiveWordMapper;
-import za.co.assessment.sensitivewords.repository.SensitiveWordCategoryRepository;
 import za.co.assessment.sensitivewords.repository.SensitiveWordRepository;
 import za.co.assessment.sensitivewords.service.SensitiveWordService;
 import za.co.assessment.sensitivewords.service.audit.SensitiveWordAuditService;
@@ -33,20 +31,17 @@ import java.util.Locale;
 public class SensitiveWordServiceImpl implements SensitiveWordService {
 
     private final SensitiveWordRepository sensitiveWordRepository;
-    private final SensitiveWordCategoryRepository categoryRepository;
     private final SensitiveWordMapper mapper;
     private final SensitiveWordAuditService auditService;
     private final ActiveSensitiveWordCache activeSensitiveWordCache;
 
     public SensitiveWordServiceImpl(
             SensitiveWordRepository sensitiveWordRepository,
-            SensitiveWordCategoryRepository categoryRepository,
             SensitiveWordMapper mapper,
             SensitiveWordAuditService auditService,
             ActiveSensitiveWordCache activeSensitiveWordCache
     ) {
         this.sensitiveWordRepository = sensitiveWordRepository;
-        this.categoryRepository = categoryRepository;
         this.mapper = mapper;
         this.auditService = auditService;
         this.activeSensitiveWordCache = activeSensitiveWordCache;
@@ -108,7 +103,6 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
         }
 
         SensitiveWord word = new SensitiveWord();
-        word.setCategory(resolveCategory(request.categoryId()));
         word.setWord(request.word().trim());
         word.setSeverityLevel(request.severityLevel() == null ? 1 : request.severityLevel());
         word.setActive(active);
@@ -150,9 +144,6 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
             throw new DuplicateSensitiveWordException("Another active sensitive word already exists for this word");
         }
 
-        if (request.categoryId() != null) {
-            existing.setCategory(resolveCategory(request.categoryId()));
-        }
         if (request.word() != null) {
             existing.setWord(proposedWord);
         }
@@ -199,14 +190,6 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
     private SensitiveWord getRequiredSensitiveWord(Long id) {
         return sensitiveWordRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sensitive word not found for id: " + id));
-    }
-
-    private SensitiveWordCategory resolveCategory(Long categoryId) {
-        if (categoryId == null) {
-            return null;
-        }
-        return categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found for id: " + categoryId));
     }
 
     private String normalize(String value) {

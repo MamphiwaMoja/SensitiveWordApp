@@ -4,29 +4,8 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="002-create-sensitive-word-categories" author="codex">
-        <preConditions onFail="MARK_RAN">
-            <not>
-                <tableExists schemaName="sw" tableName="sensitive_word_categories"/>
-            </not>
-        </preConditions>
-        <sql><![CDATA[
-CREATE TABLE sw.sensitive_word_categories (
-    category_id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    category_code NVARCHAR(50) NOT NULL,
-    category_name NVARCHAR(100) NOT NULL,
-    description NVARCHAR(500) NULL,
-    is_active BIT NOT NULL CONSTRAINT DF_sw_categories_is_active DEFAULT (1),
-    created_at DATETIME2(3) NOT NULL CONSTRAINT DF_sw_categories_created_at DEFAULT (SYSUTCDATETIME()),
-    updated_at DATETIME2(3) NULL,
-    created_by NVARCHAR(200) NOT NULL CONSTRAINT DF_sw_categories_created_by DEFAULT (N'system'),
-    updated_by NVARCHAR(200) NULL,
-    CONSTRAINT UQ_sw_categories_code UNIQUE (category_code)
-)
-        ]]></sql>
-    </changeSet>
-
     <changeSet id="003-create-sensitive-words" author="codex">
+        <validCheckSum>ANY</validCheckSum>
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists schemaName="sw" tableName="sensitive_words"/>
@@ -35,7 +14,6 @@ CREATE TABLE sw.sensitive_word_categories (
         <sql><![CDATA[
 CREATE TABLE sw.sensitive_words (
     sensitive_word_id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    category_id BIGINT NULL,
     word NVARCHAR(510) NOT NULL,
     normalized_word AS LOWER(LTRIM(RTRIM(word))) PERSISTED,
     severity_level TINYINT NOT NULL CONSTRAINT DF_sw_words_severity DEFAULT (1),
@@ -45,7 +23,6 @@ CREATE TABLE sw.sensitive_words (
     updated_at DATETIME2(3) NULL,
     created_by NVARCHAR(200) NOT NULL CONSTRAINT DF_sw_words_created_by DEFAULT (N'system'),
     updated_by NVARCHAR(200) NULL,
-    CONSTRAINT FK_sw_words_category FOREIGN KEY (category_id) REFERENCES sw.sensitive_word_categories(category_id),
     CONSTRAINT CK_sw_words_severity CHECK (severity_level BETWEEN 1 AND 255)
 )
         ]]></sql>
@@ -67,15 +44,6 @@ CREATE TABLE sw.sensitive_words (
             </not>
         </preConditions>
         <sql>CREATE INDEX IX_sw_words_active ON sw.sensitive_words(is_active, severity_level)</sql>
-    </changeSet>
-
-    <changeSet id="006-create-sensitive-words-category-index" author="codex">
-        <preConditions onFail="MARK_RAN">
-            <not>
-                <indexExists schemaName="sw" indexName="IX_sw_words_category"/>
-            </not>
-        </preConditions>
-        <sql>CREATE INDEX IX_sw_words_category ON sw.sensitive_words(category_id)</sql>
     </changeSet>
 
     <changeSet id="007-create-sanitization-requests" author="codex">

@@ -39,6 +39,7 @@ class SensitiveWordsSqlServerIntegrationTest {
         registry.add("spring.datasource.url", SQL_SERVER::getJdbcUrl);
         registry.add("spring.datasource.username", SQL_SERVER::getUsername);
         registry.add("spring.datasource.password", SQL_SERVER::getPassword);
+        registry.add("spring.liquibase.enabled", () -> "true");
     }
 
     @Autowired
@@ -59,7 +60,6 @@ class SensitiveWordsSqlServerIntegrationTest {
     @Test
     void liquibase_shouldCreateExpectedSchemaObjects() {
         assertThat(tableNames()).contains(
-                "sensitive_word_categories",
                 "sensitive_words",
                 "sanitization_requests",
                 "sensitive_word_audit_log"
@@ -138,14 +138,14 @@ class SensitiveWordsSqlServerIntegrationTest {
     @Test
     void sanitize_shouldUseLiquibaseSeededWordsFromDatabase() {
         SanitizeTextResponse response = sanitizationService.sanitize(
-                new SanitizeTextRequest("Possible SCAM and testbadword message", "integration-test", true)
+                new SanitizeTextRequest("Possible SELECT and UPDATE message", "integration-test", true)
         );
 
         assertThat(response.sanitizedText()).isEqualTo("Possible *** and *** message");
         assertThat(response.matchedWordsCount()).isEqualTo(2);
         assertThat(response.matchedWords())
                 .extracting(match -> match.word().toLowerCase())
-                .containsExactlyInAnyOrder("scam", "testbadword");
+                .containsExactlyInAnyOrder("select", "update");
 
         Integer persistedLogCount = jdbcTemplate.queryForObject(
                 """
@@ -165,13 +165,13 @@ class SensitiveWordsSqlServerIntegrationTest {
                 new SanitizeTextRequest("This text primes the active-word cache", "integration-test", false)
         );
 
-        sensitiveWordService.create(new CreateSensitiveWordRequest(null, "cache-visible-term", 3, true));
+        sensitiveWordService.create(new CreateSensitiveWordRequest("cache-visible-term", 3, true));
 
         SanitizeTextResponse response = sanitizationService.sanitize(
-                new SanitizeTextRequest("Message with cache-visible-term", "integration-test", false)
+                new SanitizeTextRequest("Payload cache-visible-term", "integration-test", false)
         );
 
-        assertThat(response.sanitizedText()).isEqualTo("Message with ***");
+        assertThat(response.sanitizedText()).isEqualTo("Payload ***");
         assertThat(response.matchedWords())
                 .extracting(match -> match.word().toLowerCase())
                 .contains("cache-visible-term");

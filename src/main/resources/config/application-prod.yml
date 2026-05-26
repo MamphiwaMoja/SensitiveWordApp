@@ -15,11 +15,13 @@ spring:
       validation-timeout: ${DB_POOL_VALIDATION_TIMEOUT_MS:5000}
 
   jpa:
-    database-platform: org.hibernate.dialect.SQLServerDialect
     show-sql: false
     properties:
       hibernate:
         format_sql: false
+
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:true}
 
 logging:
   level:

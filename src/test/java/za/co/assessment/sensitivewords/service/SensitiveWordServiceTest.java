@@ -10,7 +10,6 @@ import za.co.assessment.sensitivewords.domain.SensitiveWord;
 import za.co.assessment.sensitivewords.dto.request.CreateSensitiveWordRequest;
 import za.co.assessment.sensitivewords.dto.request.UpdateSensitiveWordRequest;
 import za.co.assessment.sensitivewords.mapper.SensitiveWordMapper;
-import za.co.assessment.sensitivewords.repository.SensitiveWordCategoryRepository;
 import za.co.assessment.sensitivewords.repository.SensitiveWordRepository;
 import za.co.assessment.sensitivewords.service.Impl.SensitiveWordServiceImpl;
 import za.co.assessment.sensitivewords.service.audit.SensitiveWordAuditService;
@@ -33,9 +32,6 @@ class SensitiveWordServiceTest {
     private SensitiveWordRepository sensitiveWordRepository;
 
     @Mock
-    private SensitiveWordCategoryRepository categoryRepository;
-
-    @Mock
     private SensitiveWordAuditService auditService;
 
     @Mock
@@ -52,7 +48,6 @@ class SensitiveWordServiceTest {
         when(sensitiveWordRepository.existsActiveWord("duplicate")).thenReturn(true);
 
         CreateSensitiveWordRequest request = new CreateSensitiveWordRequest(
-                null,
                 "Duplicate",
                 1,
                 true
@@ -68,7 +63,6 @@ class SensitiveWordServiceTest {
         when(sensitiveWordRepository.save(any(SensitiveWord.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CreateSensitiveWordRequest request = new CreateSensitiveWordRequest(
-                null,
                 "local-term",
                 2,
                 true
@@ -90,7 +84,6 @@ class SensitiveWordServiceTest {
         when(sensitiveWordRepository.existsActiveWordExcludingId("duplicate", 10L)).thenReturn(true);
 
         UpdateSensitiveWordRequest request = new UpdateSensitiveWordRequest(
-                null,
                 "duplicate",
                 null,
                 true
@@ -107,7 +100,6 @@ class SensitiveWordServiceTest {
         when(sensitiveWordRepository.save(any(SensitiveWord.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         UpdateSensitiveWordRequest request = new UpdateSensitiveWordRequest(
-                null,
                 null,
                 5,
                 false

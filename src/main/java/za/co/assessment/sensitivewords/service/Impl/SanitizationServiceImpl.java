@@ -1,6 +1,8 @@
 package za.co.assessment.sensitivewords.service.Impl;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.dao.TransientDataAccessException;
@@ -27,6 +29,7 @@ import java.util.regex.Pattern;
 
 @Service
 public class SanitizationServiceImpl implements SanitizationService {
+    private static final Logger log = LoggerFactory.getLogger(SanitizationServiceImpl.class);
 
     private final ActiveSensitiveWordCache activeSensitiveWordCache;
     private final SanitizationRequestLogRepository requestLogRepository;
@@ -69,13 +72,13 @@ public class SanitizationServiceImpl implements SanitizationService {
         UUID requestId = null;
         if (request.shouldPersistRequest()) {
             // Persist bodies only when explicitly requested because the payload can contain sensitive content.
-            SanitizationRequestLog log = new SanitizationRequestLog();
-            log.setSourceSystem(request.sourceSystem());
-            log.setOriginalText(originalText);
-            log.setSanitizedText(sanitizedText);
-            log.setMatchedWordsCount(totalMatches);
-            log.setProcessingTimeMs(processingTimeMs);
-            SanitizationRequestLog saved = requestLogRepository.save(log);
+            SanitizationRequestLog requestLog = new SanitizationRequestLog();
+            requestLog.setSourceSystem(request.sourceSystem());
+            requestLog.setOriginalText(originalText);
+            requestLog.setSanitizedText(sanitizedText);
+            requestLog.setMatchedWordsCount(totalMatches);
+            requestLog.setProcessingTimeMs(processingTimeMs);
+            SanitizationRequestLog saved = requestLogRepository.save(requestLog);
             requestId = saved.getRequestId();
         }
 
@@ -92,7 +95,7 @@ public class SanitizationServiceImpl implements SanitizationService {
     private SanitizationResult sanitizeText(String inputText, List<ActiveSensitiveWord> sensitiveWords) {
         String sanitizedText = inputText;
         List<MatchedWordResponse> matchedWords = new ArrayList<>();
-
+        log.debug("Sanitizing text against {} active sensitive words", sensitiveWords.size());
         for (ActiveSensitiveWord sensitiveWord : sensitiveWords) {
             String word = sensitiveWord.word();
             if (word == null || word.isBlank()) {

@@ -10,5 +10,11 @@ else
   exit 1
 fi
 
-"$SQLCMD" -S localhost -U sa -P "${SA_PASSWORD}" -C -Q "SELECT 1" > /dev/null
+SA_PASSWORD="${SA_PASSWORD:-${MSSQL_SA_PASSWORD:-}}"
 
+if [ -z "${SA_PASSWORD}" ]; then
+  echo "SA_PASSWORD or MSSQL_SA_PASSWORD must be provided" >&2
+  exit 1
+fi
+
+"$SQLCMD" -S localhost -U sa -P "${SA_PASSWORD}" -C -Q "SELECT 1" > /dev/null

@@ -5,7 +5,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:sqlserver://localhost:1433;databaseName=SensitiveWordsDevDb;encrypt=true;trustServerCertificate=true}
     username: ${DB_USERNAME:sensitive_words_app}
-    password: ${DB_PASSWORD:ChangeMe!12345}
+    password: "${DB_PASSWORD:SwApp.Dev#2026}"
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
     hikari:
       pool-name: SensitiveWordsDevHikariPool
@@ -14,8 +14,10 @@ spring:
       connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT_MS:30000}
 
   jpa:
-    database-platform: org.hibernate.dialect.SQLServerDialect
     show-sql: ${JPA_SHOW_SQL:false}
+
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:true}
 
 logging:
   level:

@@ -14,8 +14,10 @@ spring:
       connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT_MS:30000}
 
   jpa:
-    database-platform: org.hibernate.dialect.SQLServerDialect
     show-sql: false
+
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:true}
 
 logging:
   level:

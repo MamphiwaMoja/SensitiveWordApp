@@ -42,7 +42,7 @@ Spring Boot microservice for managing sensitive-word rules and sanitizing incomi
 | Profile | Intended use | Database setup | Authentication |
 |---|---|---|---|
 | `local` | Developer machine and Docker Compose | Local SQL bootstrap scripts | Disabled for all routes |
-| `dev` | Shared development environment | Liquibase or pre-provisioned SQL Server | HTTP Basic required |
+| `dev` | Shared development environment | Liquibase-managed migrations by default | HTTP Basic required |
 | `test` | Automated tests and integration testing | Liquibase with test-provided datasource | HTTP Basic required |
 | `staging` | Production-like validation | Liquibase-managed migrations | HTTP Basic required |
 | `prod` | Production runtime | Liquibase-managed migrations | HTTP Basic required |
@@ -101,7 +101,9 @@ docker compose up --build
 
 ### 3. Create the database and schema
 
-Liquibase is enabled and can create the `sw` schema, tables, indexes, and seed rows when the configured database user has DDL permissions.
+Liquibase is enabled by default for `dev`, `staging`, `prod`, and `test`. It creates the `sw` schema, tables, indexes, and seed rows when the configured database user has DDL permissions.
+
+Liquibase is disabled for `local` because the Docker and manual local paths use SQL bootstrap scripts with a least-privilege application login.
 
 For the documented local setup, the app uses the least-privilege `sensitive_words_app` login. That user is granted access after the schema exists, so run these bootstrap scripts first:
 
@@ -130,20 +132,19 @@ The local bootstrap scripts create:
 
 - database: `SensitiveWordsDb`
 - schema: `sw`
-- categories table
 - sensitive-word rules table
 - audit log table
 - sanitization request log table
-- seed data for smoke testing
+- seed SQL keyword data for smoke testing
 
 ### 4. Configure database access
 
 The `local` profile reads these environment variables:
 
 ```text
-DB_URL=jdbc:sqlserver://localhost:1433;databaseName=SensitiveWordsDb;encrypt=true;trustServerCertificate=true
+DB_URL=jdbc:sqlserver://localhost:14333;databaseName=SensitiveWordsDb;encrypt=true;trustServerCertificate=true
 DB_USERNAME=sensitive_words_app
-DB_PASSWORD=ChangeMe!12345
+DB_PASSWORD=SwApp.Local#2026
 ```
 
 `dev`, `staging`, and `prod` require the same database variables without source-controlled defaults:
@@ -157,9 +158,9 @@ DB_PASSWORD=<database-password>
 Example in PowerShell:
 
 ```powershell
-$env:DB_URL="jdbc:sqlserver://localhost:1433;databaseName=SensitiveWordsDb;encrypt=true;trustServerCertificate=true"
+$env:DB_URL="jdbc:sqlserver://localhost:14333;databaseName=SensitiveWordsDb;encrypt=true;trustServerCertificate=true"
 $env:DB_USERNAME="sensitive_words_app"
-$env:DB_PASSWORD="ChangeMe!12345"
+$env:DB_PASSWORD="SwApp.Local#2026"
 ```
 
 ### 5. Configure API security
@@ -250,15 +251,41 @@ curl -X DELETE http://localhost:8080/api/v1/sensitive-words/1
 - Environment-specific config lives in `src/main/resources/config/application-<profile>.yml`
 - Non-local profiles require HTTP Basic authentication for API routes, while health endpoints remain public
 
-## Production deployment
+## Production deployment walkthrough
 
-- Package the app as a Docker image and deploy it behind a load balancer or API gateway.
-- Run the sanitize endpoint as the public-facing route, and restrict CRUD endpoints to an internal network, VPN, or admin gateway.
-- Use a managed SQL Server instance or a highly available SQL Server deployment instead of a local containerized database.
-- Store database credentials in a secrets manager or environment-level secret store, not in source-controlled config.
-- Apply Liquibase migrations as part of deployment or release automation before promoting the application.
-- Enable health checks, central logging, and metrics so failed instances can be replaced automatically and request behavior can be monitored.
-- Use rolling deployments so new versions come up before old instances are removed.
+1. Build and test the release candidate in CI.
+   - Run unit tests, integration tests, coverage, and packaging.
+   - Publish the Docker image only after the pipeline is green.
+
+2. Provision production infrastructure.
+   - Run the Spring Boot service on Kubernetes, ECS, Azure Container Apps, or another container platform.
+   - Place the service behind an API gateway or load balancer.
+   - Use a managed SQL Server instance or a highly available SQL Server deployment instead of a local container.
+
+3. Configure runtime secrets and profiles.
+   - Run the app with `SPRING_PROFILES_ACTIVE=prod`.
+   - Provide `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `SECURITY_BASIC_USERNAME`, and `SECURITY_BASIC_PASSWORD` from a secrets manager.
+   - Do not store real production secrets in source control or container images.
+
+4. Apply database migrations.
+   - Keep Hibernate DDL generation disabled.
+   - Let Liquibase apply `src/main/resources/config/liquibase/master.xml` during deployment, or run the same changelog as a controlled pre-deployment migration step.
+   - Verify that the `sw.sensitive_words` table contains the seeded SQL keyword data before opening traffic.
+
+5. Expose the correct API surface.
+   - Expose `POST /api/v1/sanitize` to client systems through the gateway.
+   - Restrict CRUD endpoints under `/api/v1/sensitive-words` to internal admin users, a VPN, or an admin-only gateway route.
+   - Keep `/actuator/health` available to the platform for readiness and liveness checks.
+
+6. Operate safely.
+   - Use rolling deployments so new instances become healthy before old instances are removed.
+   - Enable central logging, metrics, tracing, and alerts for latency, error rate, database failures, and circuit breaker state.
+   - Set request-size and rate limits at the gateway because the sanitize endpoint is externally consumed.
+   - Keep request-body persistence disabled by default unless there is an explicit audit requirement.
+
+7. Roll back if needed.
+   - Roll back the container image through the deployment platform if application behavior regresses.
+   - Treat database rollbacks separately because schema/data migrations may not be safely reversible after production writes.
 
 ## Performance considerations
 

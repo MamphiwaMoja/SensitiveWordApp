@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="013-remove-sensitive-word-categories" author="codex">
+        <sql><![CDATA[
+IF COL_LENGTH(N'sw.sensitive_words', N'category_id') IS NOT NULL
+BEGIN
+    DECLARE @category_fk_name SYSNAME;
+
+    SELECT @category_fk_name = fk.name
+    FROM sys.foreign_keys fk
+    JOIN sys.tables child_table ON child_table.object_id = fk.parent_object_id
+    JOIN sys.schemas child_schema ON child_schema.schema_id = child_table.schema_id
+    WHERE child_schema.name = N'sw'
+      AND child_table.name = N'sensitive_words'
+      AND fk.name = N'FK_sw_words_category';
+
+    IF @category_fk_name IS NOT NULL
+    BEGIN
+        ALTER TABLE sw.sensitive_words DROP CONSTRAINT FK_sw_words_category;
+    END;
+
+    IF EXISTS (
+        SELECT 1
+        FROM sys.indexes i
+        JOIN sys.tables t ON t.object_id = i.object_id
+        JOIN sys.schemas s ON s.schema_id = t.schema_id
+        WHERE s.name = N'sw'
+          AND t.name = N'sensitive_words'
+          AND i.name = N'IX_sw_words_category'
+    )
+    BEGIN
+        DROP INDEX IX_sw_words_category ON sw.sensitive_words;
+    END;
+
+    ALTER TABLE sw.sensitive_words DROP COLUMN category_id;
+END;
+
+IF OBJECT_ID(N'sw.sensitive_word_categories', N'U') IS NOT NULL
+BEGIN
+    DROP TABLE sw.sensitive_word_categories;
+END;
+        ]]></sql>
+    </changeSet>
+
+    <changeSet id="014-reseed-sensitive-words-without-categories" author="codex">
+        <sqlFile
+                path="config/liquibase/sql/seed-sensitive-words.sql"
+                relativeToChangelogFile="false"
+                splitStatements="false"
+                stripComments="true"/>
+    </changeSet>
+</databaseChangeLog>

@@ -3,6 +3,7 @@ package za.co.assessment.sensitivewords.web.rest;
 import brave.Span;
 import brave.Tracer;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -48,11 +49,22 @@ public class SanitizationResource {
             @ApiResponse(
                     responseCode = "200",
                     description = "Text sanitized successfully",
+                    headers = @Header(name = TRACE_ID_HEADER, description = "Trace id for log correlation."),
                     content = @Content(schema = @Schema(implementation = SanitizeTextResponse.class))
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Invalid request payload",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "503",
+                    description = ErrorMessages.SERVICE_TEMPORARILY_UNAVAILABLE,
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "504",
+                    description = ErrorMessages.REQUEST_TIMED_OUT,
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
@@ -63,7 +75,7 @@ public class SanitizationResource {
     })
     public ResponseEntity<SanitizeTextResponse> sanitize(@Valid @RequestBody SanitizeTextRequest request) {
         long startTime = System.currentTimeMillis();
-        // Do not log inputText; log length and routing metadata so payload contents stay private.
+
         LOGGER.info(
                 "REST request to sanitize text from sourceSystem={}, persistRequest={}, inputLength={}",
                 request.sourceSystem(),
@@ -85,7 +97,7 @@ public class SanitizationResource {
     }
 
     private ResponseEntity.BodyBuilder withTraceHeader(ResponseEntity.BodyBuilder builder) {
-        // Mirror the active Brave trace id in the response header without creating a second tracing path.
+
         String traceId = currentTraceId();
         if (traceId != null) {
             builder.header(TRACE_ID_HEADER, traceId);
