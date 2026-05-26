@@ -30,8 +30,7 @@ BEGIN
 
     IF COL_LENGTH(N'sw.sensitive_words', N'is_active') IS NOT NULL
     BEGIN
-        DELETE FROM sw.sensitive_words
-        WHERE is_active = 0;
+        EXEC sp_executesql N'DELETE FROM sw.sensitive_words WHERE is_active = 0';
     END;
 
     IF NOT EXISTS (
@@ -68,10 +67,12 @@ BEGIN
 
         IF @constraintName IS NOT NULL
         BEGIN
-            EXEC(N'ALTER TABLE sw.sensitive_words DROP CONSTRAINT ' + QUOTENAME(@constraintName));
+            DECLARE @dropConstraintSql nvarchar(max);
+            SET @dropConstraintSql = N'ALTER TABLE sw.sensitive_words DROP CONSTRAINT ' + QUOTENAME(@constraintName);
+            EXEC sp_executesql @dropConstraintSql;
         END;
 
-        ALTER TABLE sw.sensitive_words DROP COLUMN is_active;
+        EXEC sp_executesql N'ALTER TABLE sw.sensitive_words DROP COLUMN is_active';
     END;
 END;
         ]]></sql>
