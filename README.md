@@ -30,7 +30,7 @@ Spring Boot microservice for managing sensitive-word rules and sanitizing incomi
 | `PATCH` | `/api/v1/sensitive-words/{id}` | Partially update a sensitive-word rule |
 | `DELETE` | `/api/v1/sensitive-words/{id}` | Permanently delete a sensitive-word rule |
 | `POST` | `/api/v1/sanitize` | Sanitize input text |
-| `GET` | `/openapi/sensitive-words-service.yaml` | Checked-in OpenAPI contract |
+| `GET` | `/swagger/sensitive-words-service.yaml` | Checked-in OpenAPI contract |
 | `GET` | `/v3/api-docs.yaml` | Generated OpenAPI document |
 | `GET` | `/swagger-ui/index.html` | Swagger UI |
 | `GET` | `/actuator/health` | Actuator health |
@@ -76,7 +76,8 @@ What this does:
 Useful URLs after startup:
 
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-- OpenAPI contract: `http://localhost:8080/openapi/sensitive-words-service.yaml`
+- OpenAPI contract: `http://localhost:8080/swagger/sensitive-words-service.yaml`
+- Generated OpenAPI YAML: `http://localhost:8080/v3/api-docs.yaml`
 - Actuator health: `http://localhost:8080/actuator/health`
 
 To stop everything and remove containers:
@@ -192,11 +193,27 @@ mvn spring-boot:run -Plocal
 
 - Health: `http://localhost:8080/actuator/health`
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-- OpenAPI contract: `http://localhost:8080/openapi/sensitive-words-service.yaml`
+- OpenAPI contract: `http://localhost:8080/swagger/sensitive-words-service.yaml`
 - Generated OpenAPI YAML: `http://localhost:8080/v3/api-docs.yaml`
-- Actuator: `http://localhost:8080/actuator/health`
 
-Swagger UI now loads the checked-in OpenAPI contract from `src/main/resources/static/openapi/sensitive-words-service.yaml`. The generated Springdoc endpoints remain available for comparison and tooling.
+Swagger UI now loads the checked-in OpenAPI contract from `src/main/resources/swagger/sensitive-words-service.yaml`. The generated Springdoc endpoints remain available for comparison and tooling.
+
+See [Swagger API Guide](docs/SWAGGER_API.md) for a reviewer-friendly walkthrough of the documented endpoints and example payloads.
+
+## API Documentation
+
+The API is documented with OpenAPI and Swagger.
+
+- Local Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- Local checked-in OpenAPI YAML: `http://localhost:8080/swagger/sensitive-words-service.yaml`
+- Local generated OpenAPI YAML: `http://localhost:8080/v3/api-docs.yaml`
+- Hosted Swagger UI: `https://mamphiwamoja.github.io/SensitiveWordApp/`
+
+The source OpenAPI contract lives at [src/main/resources/swagger/sensitive-words-service.yaml](src/main/resources/swagger/sensitive-words-service.yaml). GitHub Pages serves [docs/index.html](docs/index.html), which loads that same source contract from the repository.
+
+Additional reviewer docs:
+
+- [Swagger API Guide](docs/SWAGGER_API.md) shows the external sanitize endpoint, internal CRUD endpoints, and example payloads.
 
 ## Example API calls
 
@@ -205,7 +222,7 @@ Swagger UI now loads the checked-in OpenAPI contract from `src/main/resources/st
 ```bash
 curl -X POST http://localhost:8080/api/v1/sanitize \
   -H "Content-Type: application/json" \
-  -d '{"inputText":"This message contains testbadword and a restricted phrase.","sourceSystem":"curl-test"}'
+  -d '{"inputText":"hello On SELECT from accounts","sourceSystem":"curl-test"}'
 ```
 
 Request persistence is now opt-in. To persist the request:
@@ -213,7 +230,7 @@ Request persistence is now opt-in. To persist the request:
 ```bash
 curl -X POST http://localhost:8080/api/v1/sanitize \
   -H "Content-Type: application/json" \
-  -d '{"inputText":"Possible scam message","sourceSystem":"curl-test","persistRequest":true}'
+  -d '{"inputText":"Possible DROP and UPDATE message","sourceSystem":"curl-test","persistRequest":true}'
 ```
 
 ### Create a sensitive word
@@ -325,14 +342,3 @@ The test suite covers:
 - controller validation and error handling
 - CRUD service behavior
 - literal word replacement behavior
-
-## Submission checklist
-
-- [ ] Database scripts run successfully
-- [ ] `mvn clean test` passes
-- [ ] Application starts with the `local` profile
-- [ ] Swagger UI loads correctly
-- [ ] CRUD endpoints work end to end
-- [ ] Sanitization endpoint works with seeded data
-- [ ] No real secrets are committed
-- [ ] Repository history and README are clean enough to share

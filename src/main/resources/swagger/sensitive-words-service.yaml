@@ -3,6 +3,8 @@ info:
   title: Sensitive Words Service API
   version: v1
   description: API for managing sensitive words and sanitizing input text.
+  contact:
+    name: Mamphiwa Moja
 servers:
   - url: http://localhost:8080
     description: Local development

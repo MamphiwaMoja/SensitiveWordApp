@@ -59,7 +59,7 @@ management:
 springdoc:
   swagger-ui:
     path: /swagger-ui/index.html
-    url: /openapi/sensitive-words-service.yaml
+    url: /swagger/sensitive-words-service.yaml
     disable-swagger-default-url: true
   api-docs:
     path: /v3/api-docs
