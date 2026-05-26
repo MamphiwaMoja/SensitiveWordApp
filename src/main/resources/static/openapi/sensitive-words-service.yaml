@@ -20,7 +20,7 @@ paths:
         - Sensitive Words
       operationId: listSensitiveWords
       summary: List sensitive words
-      description: Returns a paginated list of sensitive words, including active and inactive records.
+      description: Returns a paginated list of sensitive-word records, including active and inactive entries.
       parameters:
         - name: page
           in: query
@@ -45,16 +45,33 @@ paths:
       responses:
         '200':
           description: Sensitive words returned successfully
+          headers:
+            X-Trace-Id:
+              description: Trace id for log correlation.
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SensitiveWordPage'
+        '503':
+          description: Service temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     post:
       tags:
         - Sensitive Words
       operationId: createSensitiveWord
       summary: Create a sensitive word
-      description: Creates a new sensitive word.
+      description: Creates a new sensitive word or phrase. Active words must be unique after trimming and lowercasing.
       requestBody:
         required: true
         content:
@@ -70,6 +87,10 @@ paths:
               schema:
                 type: string
                 format: uri
+            X-Trace-Id:
+              description: Trace id for log correlation.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -80,14 +101,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Referenced category not found
+        '409':
+          description: Duplicate active word
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: Duplicate active word
+        '503':
+          description: Service temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request timed out
           content:
             application/json:
               schema:
@@ -98,11 +125,17 @@ paths:
         - Sensitive Words
       operationId: getSensitiveWordById
       summary: Get a sensitive word by id
+      description: Returns one sensitive-word record by database identifier.
       parameters:
         - $ref: '#/components/parameters/SensitiveWordId'
       responses:
         '200':
           description: Sensitive word found
+          headers:
+            X-Trace-Id:
+              description: Trace id for log correlation.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -119,12 +152,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     patch:
       tags:
         - Sensitive Words
       operationId: updateSensitiveWord
       summary: Partially update a sensitive word
-      description: Applies a partial update to an existing sensitive word.
+      description: Applies a partial update to an existing sensitive word. Omitted fields keep their current values.
       parameters:
         - $ref: '#/components/parameters/SensitiveWordId'
       requestBody:
@@ -136,6 +181,11 @@ paths:
       responses:
         '200':
           description: Sensitive word updated
+          headers:
+            X-Trace-Id:
+              description: Trace id for log correlation.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -147,13 +197,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Sensitive word or category not found
+          description: Sensitive word not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
           description: Duplicate active word
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request timed out
           content:
             application/json:
               schema:
@@ -168,6 +230,11 @@ paths:
       responses:
         '204':
           description: Sensitive word deactivated
+          headers:
+            X-Trace-Id:
+              description: Trace id for log correlation.
+              schema:
+                type: string
         '400':
           description: Invalid identifier
           content:
@@ -176,6 +243,18 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Sensitive word not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request timed out
           content:
             application/json:
               schema:
@@ -196,12 +275,29 @@ paths:
       responses:
         '200':
           description: Text sanitized successfully
+          headers:
+            X-Trace-Id:
+              description: Trace id for log correlation.
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SanitizeTextResponse'
         '400':
           description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Request timed out
           content:
             application/json:
               schema:
@@ -221,6 +317,11 @@ paths:
       responses:
         '200':
           description: Application is healthy
+          headers:
+            X-Trace-Id:
+              description: Trace id for log correlation.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -235,29 +336,22 @@ components:
       schema:
         type: integer
         format: int64
-        minimum: 1
-        example: 1
   schemas:
     CreateSensitiveWordRequest:
       type: object
       required:
         - word
       properties:
-        categoryId:
-          type: integer
-          format: int64
-          nullable: true
-          example: 1
         word:
           type: string
           maxLength: 510
-          example: testbadword
+          example: SELECT
         severityLevel:
           type: integer
           minimum: 1
           maximum: 255
           default: 1
-          example: 2
+          example: 1
         active:
           type: boolean
           default: true
@@ -265,20 +359,15 @@ components:
     UpdateSensitiveWordRequest:
       type: object
       properties:
-        categoryId:
-          type: integer
-          format: int64
-          nullable: true
-          example: 2
         word:
           type: string
           maxLength: 510
-          example: restricted phrase
+          example: SELECT * FROM
         severityLevel:
           type: integer
           minimum: 1
           maximum: 255
-          example: 3
+          example: 2
         active:
           type: boolean
           example: true
@@ -289,44 +378,33 @@ components:
           type: integer
           format: int64
           example: 10
-        categoryId:
-          type: integer
-          format: int64
-          nullable: true
-          example: 1
-        categoryCode:
-          type: string
-          nullable: true
-          example: PROFANITY
-        categoryName:
-          type: string
-          nullable: true
-          example: Profanity
         word:
           type: string
-          example: testbadword
+          example: SELECT
         normalizedWord:
           type: string
-          example: testbadword
+          example: select
         severityLevel:
           type: integer
-          example: 2
+          minimum: 1
+          maximum: 255
+          example: 1
         active:
           type: boolean
           example: true
         effectiveFrom:
           type: string
           format: date-time
-          example: '2026-05-23T13:00:00'
+          example: '2026-05-26T09:14:33.787'
         createdAt:
           type: string
           format: date-time
-          example: '2026-05-23T13:00:00'
+          example: '2026-05-26T09:14:33.787'
         updatedAt:
           type: string
           format: date-time
           nullable: true
-          example: '2026-05-23T13:15:00'
+          example: '2026-05-26T09:20:13.439'
     SensitiveWordPage:
       type: object
       properties:
@@ -404,7 +482,7 @@ components:
         inputText:
           type: string
           maxLength: 5000
-          example: This message contains testbadword and a restricted phrase.
+          example: hello On SELECT from accounts
         sourceSystem:
           type: string
           maxLength: 100
@@ -424,13 +502,13 @@ components:
           example: 6d64c6b8-8f97-437f-90a0-3cc7c719f3d1
         originalText:
           type: string
-          example: This message contains testbadword.
+          example: hello On SELECT from accounts
         sanitizedText:
           type: string
-          example: This message contains ***.
+          example: hello *** *** from accounts
         matchedWordsCount:
           type: integer
-          example: 1
+          example: 2
         processingTimeMs:
           type: integer
           example: 3
@@ -444,23 +522,23 @@ components:
         sensitiveWordId:
           type: integer
           format: int64
-          example: 3
+          example: 42
         word:
           type: string
-          example: scam
+          example: SELECT
         severityLevel:
           type: integer
-          example: 4
+          example: 1
         replacementCount:
           type: integer
-          example: 2
+          example: 1
     ErrorResponse:
       type: object
       properties:
         timestamp:
           type: string
           format: date-time
-          example: '2026-05-23T15:10:00Z'
+          example: '2026-05-26T09:20:49.456073050Z'
         status:
           type: integer
           example: 400

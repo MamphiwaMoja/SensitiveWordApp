@@ -1,3 +1,9 @@
+SET ANSI_NULLS ON;
+GO
+
+SET QUOTED_IDENTIFIER ON;
+GO
+
 USE SensitiveWordsDb;
 GO
 
@@ -19,32 +25,8 @@ BEGIN
 END;
 GO
 
-IF OBJECT_ID(N'sw.sensitive_word_categories', N'U') IS NOT NULL
-BEGIN
-    DROP TABLE sw.sensitive_word_categories;
-END;
-GO
-
-CREATE TABLE sw.sensitive_word_categories (
-    category_id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    category_code NVARCHAR(50) NOT NULL,
-    category_name NVARCHAR(100) NOT NULL,
-    description NVARCHAR(500) NULL,
-    is_active BIT NOT NULL CONSTRAINT DF_sw_categories_is_active DEFAULT (1),
-    created_at DATETIME2(3) NOT NULL CONSTRAINT DF_sw_categories_created_at DEFAULT (SYSUTCDATETIME()),
-    updated_at DATETIME2(3) NULL,
-    created_by NVARCHAR(200) NOT NULL CONSTRAINT DF_sw_categories_created_by DEFAULT (N'system'),
-    updated_by NVARCHAR(200) NULL
-);
-GO
-
-ALTER TABLE sw.sensitive_word_categories
-    ADD CONSTRAINT UQ_sw_categories_code UNIQUE (category_code);
-GO
-
 CREATE TABLE sw.sensitive_words (
     sensitive_word_id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    category_id BIGINT NULL,
     word NVARCHAR(510) NOT NULL,
     normalized_word AS LOWER(LTRIM(RTRIM(word))) PERSISTED,
     severity_level TINYINT NOT NULL CONSTRAINT DF_sw_words_severity DEFAULT (1),
@@ -54,8 +36,6 @@ CREATE TABLE sw.sensitive_words (
     updated_at DATETIME2(3) NULL,
     created_by NVARCHAR(200) NOT NULL CONSTRAINT DF_sw_words_created_by DEFAULT (N'system'),
     updated_by NVARCHAR(200) NULL,
-    CONSTRAINT FK_sw_words_category
-        FOREIGN KEY (category_id) REFERENCES sw.sensitive_word_categories(category_id),
     CONSTRAINT CK_sw_words_severity
         CHECK (severity_level BETWEEN 1 AND 255)
 );
@@ -68,10 +48,6 @@ GO
 
 CREATE INDEX IX_sw_words_active
     ON sw.sensitive_words(is_active, severity_level);
-GO
-
-CREATE INDEX IX_sw_words_category
-    ON sw.sensitive_words(category_id);
 GO
 
 CREATE TABLE sw.sanitization_requests (

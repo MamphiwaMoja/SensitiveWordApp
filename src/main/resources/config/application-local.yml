@@ -1,11 +1,11 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
   datasource:
-    url: ${DB_URL:jdbc:sqlserver://localhost:1433;databaseName=SensitiveWordsDb;encrypt=true;trustServerCertificate=true}
-    username: ${DB_USERNAME:sensitive_words_app}
-    password: ${DB_PASSWORD:ChangeMe!12345}
+    url: "${DB_URL:jdbc:sqlserver://localhost:14333;databaseName=SensitiveWordsDb;encrypt=true;trustServerCertificate=true}"
+    username: "${DB_USERNAME:sensitive_words_app}"
+    password: "${DB_PASSWORD:SwApp.Local#2026}"
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
     hikari:
       pool-name: SensitiveWordsHikariPool
@@ -14,7 +14,6 @@ spring:
       connection-timeout: 30000
 
   jpa:
-    database-platform: org.hibernate.dialect.SQLServerDialect
     hibernate:
       ddl-auto: none
     open-in-view: false
@@ -27,6 +26,5 @@ spring:
 sensitive-words:
   security:
     basic:
-      # Ignored by the local security filter chain, but kept explicit for local API clients.
       username: local
       password: local

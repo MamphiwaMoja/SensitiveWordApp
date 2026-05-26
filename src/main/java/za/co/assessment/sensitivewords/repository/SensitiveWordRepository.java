@@ -2,7 +2,6 @@ package za.co.assessment.sensitivewords.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +11,6 @@ import java.util.List;
 
 public interface SensitiveWordRepository extends JpaRepository<SensitiveWord, Long> {
 
-    @EntityGraph(attributePaths = "category")
     Page<SensitiveWord> findAll(Pageable pageable);
 
     // Sanitization only needs the active words from the database. Longer entries run first
@@ -20,7 +18,6 @@ public interface SensitiveWordRepository extends JpaRepository<SensitiveWord, Lo
     @Query("""
             select sw
             from SensitiveWord sw
-            left join fetch sw.category
             where sw.active = true
             order by length(sw.word) desc
             """)

@@ -11,11 +11,6 @@ ORDER BY TABLE_NAME;
 GO
 
 SELECT
-    COUNT(*) AS total_categories
-FROM sw.sensitive_word_categories;
-GO
-
-SELECT
     COUNT(*) AS total_sensitive_words,
     SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active_sensitive_words
 FROM sw.sensitive_words;

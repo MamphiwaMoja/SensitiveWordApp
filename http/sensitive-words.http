@@ -9,7 +9,7 @@ POST http://localhost:8080/api/v1/sanitize
 Content-Type: application/json
 
 {
-  "inputText": "This message contains testbadword and a restricted phrase.",
+  "inputText": "This message contains ADD and Select.",
   "sourceSystem": "http-file"
 }
 
@@ -18,7 +18,7 @@ POST http://localhost:8080/api/v1/sensitive-words
 Content-Type: application/json
 
 {
-  "word": "local-demo-term",
+  "word": "Integrate",
   "severityLevel": 2,
   "active": true
 }

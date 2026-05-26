@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 public record SanitizeTextRequest(
         @Schema(
                 description = "Input text that should be sanitized using active sensitive words.",
-                example = "This message contains testbadword and a restricted phrase."
+                example = "hello On SELECT from accounts"
         )
         @NotBlank(message = "inputText is required")
         @Size(max = 5000, message = "inputText must not exceed 5000 characters")
@@ -22,7 +22,7 @@ public record SanitizeTextRequest(
         String sourceSystem,
 
         @Schema(
-                description = "When true, persist the request and response payloads for audit/troubleshooting.",
+                description = "When true, persist the request and response payloads for audit/troubleshooting. Keep false for sensitive production payloads unless retention is required.",
                 example = "false",
                 defaultValue = "false"
         )

@@ -12,7 +12,7 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.sql_logins WHERE name = 'sensitive_words_app')
 BEGIN
     CREATE LOGIN [sensitive_words_app]
-    WITH PASSWORD = 'ChangeMe!12345',
+    WITH PASSWORD = 'SwApp.Local#2026',
          CHECK_POLICY = ON,
          CHECK_EXPIRATION = OFF;
 END

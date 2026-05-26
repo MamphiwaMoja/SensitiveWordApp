@@ -4,14 +4,17 @@ import brave.Span;
 import brave.Tracer;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.transaction.TransactionTimedOutException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -86,6 +89,17 @@ public class ExceptionTranslator {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, ErrorMessages.DATABASE_CONSTRAINT_VIOLATION, request, null);
+    }
+
+    @ExceptionHandler(CallNotPermittedException.class)
+    public ResponseEntity<ErrorResponse> handleCircuitBreakerOpen(CallNotPermittedException ex, HttpServletRequest request) {
+        Map<String, String> details = Map.of("circuitBreaker", ex.getCausingCircuitBreakerName());
+        return build(HttpStatus.SERVICE_UNAVAILABLE, ErrorMessages.SERVICE_TEMPORARILY_UNAVAILABLE, request, details);
+    }
+
+    @ExceptionHandler({QueryTimeoutException.class, TransactionTimedOutException.class})
+    public ResponseEntity<ErrorResponse> handleTimeout(Exception ex, HttpServletRequest request) {
+        return build(HttpStatus.GATEWAY_TIMEOUT, ErrorMessages.REQUEST_TIMED_OUT, request, null);
     }
 
     @ExceptionHandler(Exception.class)

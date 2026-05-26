@@ -1,0 +1,41 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    hikari:
+      pool-name: SensitiveWordsStagingHikariPool
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:15}
+      minimum-idle: ${DB_POOL_MIN_IDLE:3}
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT_MS:30000}
+
+  jpa:
+    show-sql: false
+
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:true}
+
+logging:
+  level:
+    za.co.assessment.sensitivewords: ${APP_LOG_LEVEL:INFO}
+    org.hibernate.SQL: WARN
+
+management:
+  endpoint:
+    health:
+      show-details: when_authorized
+
+sensitive-words:
+  cache:
+    active-words:
+      scheduled-refresh-enabled: true
+      refresh-interval-ms: ${ACTIVE_WORDS_REFRESH_INTERVAL_MS:300000}
+  security:
+    basic:
+      username: ${SECURITY_BASIC_USERNAME:sensitive-words}
+      password: ${SECURITY_BASIC_PASSWORD:}
+      role: ${SECURITY_BASIC_ROLE:API_USER}

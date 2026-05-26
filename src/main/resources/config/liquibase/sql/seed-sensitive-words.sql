@@ -1,14 +1,6 @@
-USE SensitiveWordsDb;
-GO
-
 SET ANSI_NULLS ON;
-GO
-
 SET QUOTED_IDENTIFIER ON;
-GO
-
 SET NOCOUNT ON;
-GO
 
 DECLARE @sql_keywords TABLE (
     word NVARCHAR(510) NOT NULL
@@ -284,4 +276,3 @@ WHERE target.normalized_word IN (N'testbadword', N'restricted phrase', N'scam')
   );
 
 SET NOCOUNT OFF;
-GO

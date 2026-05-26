@@ -67,6 +67,33 @@ class SanitizationServiceTest {
     }
 
     @Test
+    void sanitize_shouldReplaceOnlyExactWords() {
+        when(activeSensitiveWordCache.getActiveWords()).thenReturn(List.of(
+                word(1L, "on"),
+                word(2L, "select")
+        ));
+
+        SanitizeTextResponse response = sanitizationService.sanitize(
+                new SanitizeTextRequest("hello On select, hello contains Select", "unit-test", false)
+        );
+
+        assertThat(response.sanitizedText()).isEqualTo("hello *** ***, hello contains ***");
+        assertThat(response.matchedWordsCount()).isEqualTo(3);
+    }
+
+    @Test
+    void sanitize_shouldReplaceExactPhrasesWithoutMatchingInsideWords() {
+        when(activeSensitiveWordCache.getActiveWords()).thenReturn(List.of(word(3L, "restricted phrase")));
+
+        SanitizeTextResponse response = sanitizationService.sanitize(
+                new SanitizeTextRequest("restricted phrase unrestricted phrase", "unit-test", false)
+        );
+
+        assertThat(response.sanitizedText()).isEqualTo("*** unrestricted phrase");
+        assertThat(response.matchedWordsCount()).isEqualTo(1);
+    }
+
+    @Test
     void sanitize_shouldPersistRequestLog_whenRequested() {
         ActiveSensitiveWord rule = word(3L, "scam");
         when(activeSensitiveWordCache.getActiveWords()).thenReturn(List.of(rule));

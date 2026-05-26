@@ -118,9 +118,6 @@ class SensitiveWordResourceTest {
     private SensitiveWordResponse response(Long id, String word) {
         return new SensitiveWordResponse(
                 id,
-                1L,
-                "PROFANITY",
-                "Profanity",
                 word,
                 word,
                 2,
