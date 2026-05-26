@@ -35,9 +35,9 @@ management:
 
 sensitive-words:
   cache:
-    active-words:
+    words:
       scheduled-refresh-enabled: true
-      refresh-interval-ms: ${ACTIVE_WORDS_REFRESH_INTERVAL_MS:300000}
+      refresh-interval-ms: ${WORDS_REFRESH_INTERVAL_MS:300000}
   security:
     basic:
       username: ${SECURITY_BASIC_USERNAME:sensitive-words}

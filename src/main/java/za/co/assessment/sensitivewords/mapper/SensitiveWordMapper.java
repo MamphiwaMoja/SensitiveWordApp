@@ -13,7 +13,6 @@ public class SensitiveWordMapper {
                 word.getWord(),
                 word.getNormalizedWord(),
                 word.getSeverityLevel(),
-                word.getActive(),
                 word.getEffectiveFrom(),
                 word.getCreatedAt(),
                 word.getUpdatedAt()

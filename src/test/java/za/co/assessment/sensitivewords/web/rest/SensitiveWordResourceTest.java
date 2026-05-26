@@ -55,8 +55,7 @@ class SensitiveWordResourceTest {
                         .content("""
                                 {
                                   "word": "local-demo-term",
-                                  "severityLevel": 2,
-                                  "active": true
+                                  "severityLevel": 2
                                 }
                                 """))
                 .andExpect(status().isCreated())
@@ -131,7 +130,6 @@ class SensitiveWordResourceTest {
                 word,
                 word,
                 2,
-                true,
                 LocalDateTime.of(2026, 5, 23, 12, 0),
                 LocalDateTime.of(2026, 5, 23, 12, 0),
                 null

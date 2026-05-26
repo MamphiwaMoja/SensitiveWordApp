@@ -31,9 +31,6 @@ public class SensitiveWord extends AbstractAuditingEntity {
     @Column(name = "severity_level", nullable = false)
     private Integer severityLevel = 1;
 
-    @Column(name = "is_active", nullable = false)
-    private Boolean active = true;
-
     @Column(name = "effective_from", nullable = false)
     private LocalDateTime effectiveFrom;
 
@@ -51,9 +48,6 @@ public class SensitiveWord extends AbstractAuditingEntity {
         }
         if (severityLevel == null) {
             severityLevel = 1;
-        }
-        if (active == null) {
-            active = true;
         }
     }
 
@@ -87,14 +81,6 @@ public class SensitiveWord extends AbstractAuditingEntity {
 
     public void setSeverityLevel(Integer severityLevel) {
         this.severityLevel = severityLevel;
-    }
-
-    public Boolean getActive() {
-        return active;
-    }
-
-    public void setActive(Boolean active) {
-        this.active = active;
     }
 
     public LocalDateTime getEffectiveFrom() {

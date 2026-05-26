@@ -16,9 +16,6 @@ public record CreateSensitiveWordRequest(
         @Schema(description = "Severity ranking stored with the sensitive word. Defaults to 1 when omitted.", minimum = "1", maximum = "255", example = "1")
         @Min(value = 1, message = "severityLevel must be between 1 and 255")
         @Max(value = 255, message = "severityLevel must be between 1 and 255")
-        Integer severityLevel,
-
-        @Schema(description = "When false, the word is created in an inactive state. Defaults to true when omitted.", defaultValue = "true", example = "true")
-        Boolean active
+        Integer severityLevel
 ) {
 }

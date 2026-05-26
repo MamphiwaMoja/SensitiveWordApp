@@ -41,8 +41,8 @@ public class SanitizationResource {
 
     @PostMapping
     @Operation(
-            summary = "Sanitize input text using active sensitive words",
-            description = "Replaces active sensitive words from the database with the default mask and returns the sanitized text. "
+            summary = "Sanitize input text using configured sensitive words",
+            description = "Replaces configured sensitive words from the database with the default mask and returns the sanitized text. "
                     + "Request payload persistence is disabled by default and must be explicitly enabled."
     )
     @ApiResponses({

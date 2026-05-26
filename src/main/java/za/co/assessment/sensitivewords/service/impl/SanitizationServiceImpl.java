@@ -18,8 +18,8 @@ import za.co.assessment.sensitivewords.dto.response.SanitizeTextResponse;
 import za.co.assessment.sensitivewords.repository.SanitizationRequestLogRepository;
 import za.co.assessment.sensitivewords.service.SanitizationService;
 import za.co.assessment.sensitivewords.config.Constants;
-import za.co.assessment.sensitivewords.service.cache.ActiveSensitiveWord;
-import za.co.assessment.sensitivewords.service.cache.ActiveSensitiveWordCache;
+import za.co.assessment.sensitivewords.service.cache.CachedSensitiveWord;
+import za.co.assessment.sensitivewords.service.cache.SensitiveWordCache;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,14 +31,14 @@ import java.util.regex.Pattern;
 public class SanitizationServiceImpl implements SanitizationService {
     private static final Logger log = LoggerFactory.getLogger(SanitizationServiceImpl.class);
 
-    private final ActiveSensitiveWordCache activeSensitiveWordCache;
+    private final SensitiveWordCache sensitiveWordCache;
     private final SanitizationRequestLogRepository requestLogRepository;
 
     public SanitizationServiceImpl(
-            ActiveSensitiveWordCache activeSensitiveWordCache,
+            SensitiveWordCache sensitiveWordCache,
             SanitizationRequestLogRepository requestLogRepository
     ) {
-        this.activeSensitiveWordCache = activeSensitiveWordCache;
+        this.sensitiveWordCache = sensitiveWordCache;
         this.requestLogRepository = requestLogRepository;
     }
 
@@ -59,8 +59,8 @@ public class SanitizationServiceImpl implements SanitizationService {
         long startNanos = System.nanoTime();
         String originalText = request.inputText();
 
-        List<ActiveSensitiveWord> activeWords = activeSensitiveWordCache.getActiveWords();
-        SanitizationResult result = sanitizeText(originalText, activeWords);
+        List<CachedSensitiveWord> words = sensitiveWordCache.getWords();
+        SanitizationResult result = sanitizeText(originalText, words);
         String sanitizedText = result.sanitizedText();
 
         int totalMatches = result.matchedWords().stream()
@@ -92,11 +92,11 @@ public class SanitizationServiceImpl implements SanitizationService {
         );
     }
 
-    private SanitizationResult sanitizeText(String inputText, List<ActiveSensitiveWord> sensitiveWords) {
+    private SanitizationResult sanitizeText(String inputText, List<CachedSensitiveWord> sensitiveWords) {
         String sanitizedText = inputText;
         List<MatchedWordResponse> matchedWords = new ArrayList<>();
-        log.debug("Sanitizing text against {} active sensitive words", sensitiveWords.size());
-        for (ActiveSensitiveWord sensitiveWord : sensitiveWords) {
+        log.debug("Sanitizing text against {} sensitive words", sensitiveWords.size());
+        for (CachedSensitiveWord sensitiveWord : sensitiveWords) {
             String word = sensitiveWord.word();
             if (word == null || word.isBlank()) {
                 continue;

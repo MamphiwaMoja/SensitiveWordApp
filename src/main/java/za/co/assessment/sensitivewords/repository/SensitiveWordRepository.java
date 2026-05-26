@@ -13,32 +13,28 @@ public interface SensitiveWordRepository extends JpaRepository<SensitiveWord, Lo
 
     Page<SensitiveWord> findAll(Pageable pageable);
 
-    // Sanitization only needs the active words from the database. Longer entries run first
-    // so overlapping words replace predictably.
+    // Longer entries run first so overlapping words replace predictably.
     @Query("""
             select sw
             from SensitiveWord sw
-            where sw.active = true
             order by length(sw.word) desc
             """)
-    List<SensitiveWord> findActiveWords();
+    List<SensitiveWord> findWordsForSanitization();
 
     @Query("""
             select count(sw) > 0
             from SensitiveWord sw
             where sw.normalizedWord = :normalizedWord
-              and sw.active = true
             """)
-    boolean existsActiveWord(@Param("normalizedWord") String normalizedWord);
+    boolean existsByNormalizedWord(@Param("normalizedWord") String normalizedWord);
 
     @Query("""
             select count(sw) > 0
             from SensitiveWord sw
             where sw.normalizedWord = :normalizedWord
-              and sw.active = true
               and sw.id <> :excludedId
             """)
-    boolean existsActiveWordExcludingId(
+    boolean existsByNormalizedWordExcludingId(
             @Param("normalizedWord") String normalizedWord,
             @Param("excludedId") Long excludedId
     );

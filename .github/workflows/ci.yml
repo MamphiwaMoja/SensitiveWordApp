@@ -84,7 +84,7 @@ jobs:
                 line_total = line_missed + line_covered
                 instruction_pct = instruction_total == 0 ? 0 : instruction_covered * 100 / instruction_total
                 line_pct = line_total == 0 ? 0 : line_covered * 100 / line_total
-                printf "%.2f %.2f", instruction_pct, line_pct
+                printf "%.2f %.2f\n", instruction_pct, line_pct
               }
             ' "${csv}"
           )
@@ -126,8 +126,29 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
 
-      - name: Run Maven verification with SQL Server Testcontainers
-        run: mvn -B -ntp clean verify
+      - name: Run integration tests with SQL Server Testcontainers
+        run: mvn -B -ntp -DskipUnitTests=true clean verify
+
+      - name: Print integration test reports on failure
+        if: failure()
+        shell: bash
+        run: |
+          if compgen -G "target/failsafe-reports/*.txt" > /dev/null; then
+            for report in target/failsafe-reports/*.txt; do
+              echo "===== ${report} ====="
+              cat "${report}"
+            done
+          else
+            echo "No Failsafe text reports were generated."
+          fi
+
+      - name: Upload integration test reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: failsafe-reports
+          path: target/failsafe-reports
+          if-no-files-found: ignore
 
   static-analysis:
     name: Static Analysis

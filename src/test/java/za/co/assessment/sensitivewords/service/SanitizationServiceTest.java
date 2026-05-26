@@ -12,8 +12,8 @@ import za.co.assessment.sensitivewords.dto.request.SanitizeTextRequest;
 import za.co.assessment.sensitivewords.dto.response.SanitizeTextResponse;
 import za.co.assessment.sensitivewords.repository.SanitizationRequestLogRepository;
 import za.co.assessment.sensitivewords.service.impl.SanitizationServiceImpl;
-import za.co.assessment.sensitivewords.service.cache.ActiveSensitiveWord;
-import za.co.assessment.sensitivewords.service.cache.ActiveSensitiveWordCache;
+import za.co.assessment.sensitivewords.service.cache.CachedSensitiveWord;
+import za.co.assessment.sensitivewords.service.cache.SensitiveWordCache;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 class SanitizationServiceTest {
 
     @Mock
-    private ActiveSensitiveWordCache activeSensitiveWordCache;
+    private SensitiveWordCache sensitiveWordCache;
 
     @Mock
     private SanitizationRequestLogRepository requestLogRepository;
@@ -38,7 +38,7 @@ class SanitizationServiceTest {
 
     @Test
     void sanitize_shouldReturnOriginalText_whenNoRulesMatch() {
-        when(activeSensitiveWordCache.getActiveWords()).thenReturn(List.of());
+        when(sensitiveWordCache.getWords()).thenReturn(List.of());
 
         SanitizeTextResponse response = sanitizationService.sanitize(
                 new SanitizeTextRequest("Clean message", "unit-test", false)
@@ -53,8 +53,8 @@ class SanitizationServiceTest {
 
     @Test
     void sanitize_shouldReplaceDbWordsWithDefaultMask() {
-        ActiveSensitiveWord rule = word(1L, "testbadword");
-        when(activeSensitiveWordCache.getActiveWords()).thenReturn(List.of(rule));
+        CachedSensitiveWord rule = word(1L, "testbadword");
+        when(sensitiveWordCache.getWords()).thenReturn(List.of(rule));
 
         SanitizeTextResponse response = sanitizationService.sanitize(
                 new SanitizeTextRequest("This has TESTBADWORD inside", "unit-test", false)
@@ -68,7 +68,7 @@ class SanitizationServiceTest {
 
     @Test
     void sanitize_shouldReplaceOnlyExactWords() {
-        when(activeSensitiveWordCache.getActiveWords()).thenReturn(List.of(
+        when(sensitiveWordCache.getWords()).thenReturn(List.of(
                 word(1L, "on"),
                 word(2L, "select")
         ));
@@ -83,7 +83,7 @@ class SanitizationServiceTest {
 
     @Test
     void sanitize_shouldReplaceExactPhrasesWithoutMatchingInsideWords() {
-        when(activeSensitiveWordCache.getActiveWords()).thenReturn(List.of(word(3L, "restricted phrase")));
+        when(sensitiveWordCache.getWords()).thenReturn(List.of(word(3L, "restricted phrase")));
 
         SanitizeTextResponse response = sanitizationService.sanitize(
                 new SanitizeTextRequest("restricted phrase unrestricted phrase", "unit-test", false)
@@ -95,8 +95,8 @@ class SanitizationServiceTest {
 
     @Test
     void sanitize_shouldPersistRequestLog_whenRequested() {
-        ActiveSensitiveWord rule = word(3L, "scam");
-        when(activeSensitiveWordCache.getActiveWords()).thenReturn(List.of(rule));
+        CachedSensitiveWord rule = word(3L, "scam");
+        when(sensitiveWordCache.getWords()).thenReturn(List.of(rule));
         when(requestLogRepository.save(any(SanitizationRequestLog.class))).thenAnswer(invocation -> {
             SanitizationRequestLog log = invocation.getArgument(0);
             log.setRequestId(UUID.randomUUID());
@@ -117,8 +117,8 @@ class SanitizationServiceTest {
 
     @Test
     void sanitize_shouldNotPersistRequestLog_whenPersistFlagIsMissing() {
-        ActiveSensitiveWord rule = word(4L, "scam");
-        when(activeSensitiveWordCache.getActiveWords()).thenReturn(List.of(rule));
+        CachedSensitiveWord rule = word(4L, "scam");
+        when(sensitiveWordCache.getWords()).thenReturn(List.of(rule));
 
         SanitizeTextResponse response = sanitizationService.sanitize(
                 new SanitizeTextRequest("Possible scam message", "unit-test", null)
@@ -129,7 +129,7 @@ class SanitizationServiceTest {
         verify(requestLogRepository, never()).save(any());
     }
 
-    private ActiveSensitiveWord word(Long id, String value) {
-        return new ActiveSensitiveWord(id, value, 1);
+    private CachedSensitiveWord word(Long id, String value) {
+        return new CachedSensitiveWord(id, value, 1);
     }
 }

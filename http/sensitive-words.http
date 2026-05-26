@@ -19,8 +19,7 @@ Content-Type: application/json
 
 {
   "word": "Integrate",
-  "severityLevel": 2,
-  "active": true
+  "severityLevel": 2
 }
 
 ### Patch sensitive word

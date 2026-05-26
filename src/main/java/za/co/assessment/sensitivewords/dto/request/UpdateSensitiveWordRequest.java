@@ -14,9 +14,6 @@ public record UpdateSensitiveWordRequest(
         @Schema(description = "New severity ranking. Leave omitted to keep the existing value.", minimum = "1", maximum = "255", example = "2")
         @Min(value = 1, message = "severityLevel must be between 1 and 255")
         @Max(value = 255, message = "severityLevel must be between 1 and 255")
-        Integer severityLevel,
-
-        @Schema(description = "Updated activation flag. Leave omitted to keep the existing value.", example = "true")
-        Boolean active
+        Integer severityLevel
 ) {
 }

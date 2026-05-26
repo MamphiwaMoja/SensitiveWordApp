@@ -20,7 +20,7 @@ import za.co.assessment.sensitivewords.mapper.SensitiveWordMapper;
 import za.co.assessment.sensitivewords.repository.SensitiveWordRepository;
 import za.co.assessment.sensitivewords.service.SensitiveWordService;
 import za.co.assessment.sensitivewords.service.audit.SensitiveWordAuditService;
-import za.co.assessment.sensitivewords.service.cache.ActiveSensitiveWordCache;
+import za.co.assessment.sensitivewords.service.cache.SensitiveWordCache;
 import za.co.assessment.sensitivewords.web.rest.errors.BadRequestException;
 import za.co.assessment.sensitivewords.web.rest.errors.DuplicateSensitiveWordException;
 import za.co.assessment.sensitivewords.web.rest.errors.ResourceNotFoundException;
@@ -33,18 +33,18 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
     private final SensitiveWordRepository sensitiveWordRepository;
     private final SensitiveWordMapper mapper;
     private final SensitiveWordAuditService auditService;
-    private final ActiveSensitiveWordCache activeSensitiveWordCache;
+    private final SensitiveWordCache sensitiveWordCache;
 
     public SensitiveWordServiceImpl(
             SensitiveWordRepository sensitiveWordRepository,
             SensitiveWordMapper mapper,
             SensitiveWordAuditService auditService,
-            ActiveSensitiveWordCache activeSensitiveWordCache
+            SensitiveWordCache sensitiveWordCache
     ) {
         this.sensitiveWordRepository = sensitiveWordRepository;
         this.mapper = mapper;
         this.auditService = auditService;
-        this.activeSensitiveWordCache = activeSensitiveWordCache;
+        this.sensitiveWordCache = sensitiveWordCache;
     }
 
     @Retryable(
@@ -96,21 +96,19 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
     @Transactional(timeoutString = "${sensitive-words.timeouts.write-transaction-seconds:10}")
     public SensitiveWordResponse create(CreateSensitiveWordRequest request) {
         String normalizedWord = normalize(request.word());
-        boolean active = request.active() == null || request.active();
 
-        if (active && sensitiveWordRepository.existsActiveWord(normalizedWord)) {
-            throw new DuplicateSensitiveWordException("An active sensitive word already exists for this word");
+        if (sensitiveWordRepository.existsByNormalizedWord(normalizedWord)) {
+            throw new DuplicateSensitiveWordException("A sensitive word already exists for this word");
         }
 
         SensitiveWord word = new SensitiveWord();
         word.setWord(request.word().trim());
         word.setSeverityLevel(request.severityLevel() == null ? 1 : request.severityLevel());
-        word.setActive(active);
         word.setCreatedBy(Constants.SYSTEM_ACCOUNT);
 
         SensitiveWord saved = sensitiveWordRepository.save(word);
         auditService.recordInsert(saved);
-        activeSensitiveWordCache.invalidate();
+        sensitiveWordCache.invalidate();
         return mapper.toResponse(saved);
     }
 
@@ -137,11 +135,9 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
         }
 
         String normalizedWord = normalize(proposedWord);
-        boolean activeAfterUpdate = request.active() == null ? Boolean.TRUE.equals(existing.getActive()) : request.active();
 
-        if (activeAfterUpdate
-                && sensitiveWordRepository.existsActiveWordExcludingId(normalizedWord, id)) {
-            throw new DuplicateSensitiveWordException("Another active sensitive word already exists for this word");
+        if (sensitiveWordRepository.existsByNormalizedWordExcludingId(normalizedWord, id)) {
+            throw new DuplicateSensitiveWordException("Another sensitive word already exists for this word");
         }
 
         if (request.word() != null) {
@@ -150,14 +146,11 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
         if (request.severityLevel() != null) {
             existing.setSeverityLevel(request.severityLevel());
         }
-        if (request.active() != null) {
-            existing.setActive(request.active());
-        }
         existing.setUpdatedBy(Constants.SYSTEM_ACCOUNT);
 
         SensitiveWord saved = sensitiveWordRepository.save(existing);
         auditService.recordUpdate(saved, oldSnapshot);
-        activeSensitiveWordCache.invalidate();
+        sensitiveWordCache.invalidate();
         return mapper.toResponse(saved);
     }
 
@@ -180,7 +173,7 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
 
         auditService.recordDelete(existing, oldSnapshot);
         sensitiveWordRepository.delete(existing);
-        activeSensitiveWordCache.invalidate();
+        sensitiveWordCache.invalidate();
     }
 
     private SensitiveWord getRequiredSensitiveWord(Long id) {

@@ -3,6 +3,8 @@ info:
   title: Sensitive Words Service API
   version: v1
   description: API for managing sensitive words and sanitizing input text.
+  contact:
+    name: Mamphiwa Moja
 servers:
   - url: http://localhost:8080
     description: Local development
@@ -71,7 +73,7 @@ paths:
         - Sensitive Words
       operationId: createSensitiveWord
       summary: Create a sensitive word
-      description: Creates a new sensitive word or phrase. Active words must be unique after trimming and lowercasing.
+      description: Creates a new sensitive word or phrase. Words must be unique after trimming and lowercasing.
       requestBody:
         required: true
         content:
@@ -102,7 +104,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: Duplicate active word
+          description: Duplicate word
           content:
             application/json:
               schema:
@@ -203,7 +205,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: Duplicate active word
+          description: Duplicate word
           content:
             application/json:
               schema:
@@ -265,8 +267,8 @@ paths:
       tags:
         - Sanitization
       operationId: sanitizeText
-      summary: Sanitize input text using active sensitive words
-      description: Replaces active sensitive words from the database with the default mask and returns the sanitized text. Request payload persistence is disabled by default and must be explicitly enabled.
+      summary: Sanitize input text using configured sensitive words
+      description: Replaces configured sensitive words from the database with the default mask and returns the sanitized text. Request payload persistence is disabled by default and must be explicitly enabled.
       requestBody:
         required: true
         content:
@@ -353,10 +355,6 @@ components:
           maximum: 255
           default: 1
           example: 1
-        active:
-          type: boolean
-          default: true
-          example: true
     UpdateSensitiveWordRequest:
       type: object
       properties:
@@ -369,9 +367,6 @@ components:
           minimum: 1
           maximum: 255
           example: 2
-        active:
-          type: boolean
-          example: true
     SensitiveWordResponse:
       type: object
       properties:
@@ -390,9 +385,6 @@ components:
           minimum: 1
           maximum: 255
           example: 1
-        active:
-          type: boolean
-          example: true
         effectiveFrom:
           type: string
           format: date-time
