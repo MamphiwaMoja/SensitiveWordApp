@@ -31,10 +31,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -51,10 +51,10 @@ jobs:
     needs: compile
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -105,7 +105,7 @@ jobs:
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Upload JaCoCo report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: jacoco-report
           path: target/site/jacoco
@@ -119,10 +119,10 @@ jobs:
     needs: unit-tests
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -139,10 +139,10 @@ jobs:
     needs: compile
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -172,17 +172,17 @@ jobs:
       NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
 
       - name: Cache OWASP Dependency-Check data
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           # Cache NVD data to reduce repeated downloads and rate-limit exposure.
           path: ~/.dependency-check
@@ -193,7 +193,7 @@ jobs:
       - name: Review dependency changes
         # dependency-review-action is useful for public PRs, but can be unavailable in private fork contexts.
         if: ${{ github.event_name == 'pull_request' && github.event.repository.private == false }}
-        uses: actions/dependency-review-action@v5
+        uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
 
@@ -236,7 +236,7 @@ jobs:
       - name: Upload dependency scan report
         # Upload the report even when the scan step warns or finds vulnerable dependencies.
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
           path: target/dependency-check-report.*
@@ -253,13 +253,13 @@ jobs:
       - dependency-vulnerability-scan
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
