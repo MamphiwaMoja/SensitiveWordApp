@@ -60,7 +60,7 @@ jobs:
           cache: maven
 
       - name: Run unit tests with coverage
-        run: mvn -B -ntp test jacoco:report
+        run: mvn -B -ntp clean test jacoco:report
 
       - name: Summarize test coverage
         shell: bash
@@ -102,6 +102,10 @@ jobs:
             echo ""
             echo "The full JaCoCo HTML report is uploaded as the \`jacoco-report\` artifact."
           } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Verify coverage badge
+        shell: pwsh
+        run: ./scripts/update-coverage-badge.ps1 -CsvPath target/site/jacoco/jacoco.csv -BadgePath .github/badges/coverage.svg -Verify
 
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v6

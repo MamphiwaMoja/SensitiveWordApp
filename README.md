@@ -330,11 +330,13 @@ Remaining production-scale improvements:
 
 Run locally with:
 
-```bash
-mvn test jacoco:report
+```powershell
+mvn clean test jacoco:report
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\update-coverage-badge.ps1
 ```
 
 The JaCoCo HTML coverage report is generated at `target/site/jacoco/index.html`.
+The README coverage badge is generated from `target/site/jacoco/jacoco.csv`; CI verifies that it stays in sync.
 
 The test suite covers:
 
