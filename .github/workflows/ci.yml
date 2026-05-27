@@ -60,7 +60,7 @@ jobs:
           cache: maven
 
       - name: Run unit tests with coverage
-        run: mvn -B -ntp test jacoco:report
+        run: mvn -B -ntp clean test jacoco:report
 
       - name: Summarize test coverage
         shell: bash

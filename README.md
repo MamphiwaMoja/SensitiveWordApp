@@ -331,7 +331,7 @@ Remaining production-scale improvements:
 Run locally with:
 
 ```powershell
-mvn test jacoco:report
+mvn clean test jacoco:report
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\update-coverage-badge.ps1
 ```
 

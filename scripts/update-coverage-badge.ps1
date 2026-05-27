@@ -10,7 +10,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 if (-not (Test-Path -LiteralPath $CsvPath)) {
-    throw "JaCoCo CSV report was not found at '$CsvPath'. Run 'mvn test jacoco:report' first."
+    throw "JaCoCo CSV report was not found at '$CsvPath'. Run 'mvn clean test jacoco:report' first."
 }
 
 $rows = Import-Csv -LiteralPath $CsvPath
@@ -77,7 +77,7 @@ $svg = @"
 </svg>
 "@
 
-$svg = $svg.TrimEnd() + [Environment]::NewLine
+$svg = $svg.TrimEnd() + "`n"
 
 if ($Verify) {
     if (-not (Test-Path -LiteralPath $BadgePath)) {
@@ -86,7 +86,7 @@ if ($Verify) {
 
     $existing = Get-Content -LiteralPath $BadgePath -Raw
     if ($existing -ne $svg) {
-        throw "Coverage badge is stale. Run './scripts/update-coverage-badge.ps1' after generating the JaCoCo report."
+        throw "Coverage badge is stale. Expected $displayCoverage ($titleMetric coverage). Run './scripts/update-coverage-badge.ps1' after generating the JaCoCo report."
     }
 
     Write-Host "Coverage badge is up to date: $displayCoverage ($titleMetric coverage)."
